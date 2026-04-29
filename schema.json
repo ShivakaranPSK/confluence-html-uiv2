@@ -44,7 +44,7 @@
         }
       ],
       "edges": [
-        { "from": "customer", "to": "order", "label": "CUSTOMER_ID", "cardinality": "1:N" }
+        { "from": "customer", "to": "order", "label": "customer.ID = order.CUSTOMER_ID", "cardinality": "1:N" }
       ],
       "layout": {
         "customer": [60, 60],
