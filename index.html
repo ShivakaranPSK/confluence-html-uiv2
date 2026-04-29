@@ -195,7 +195,13 @@ code{background:var(--s2);padding:1px 5px;border-radius:3px;font-family:var(--mo
         }
       ],
       <span style="color:var(--ah)">"edges"</span>: [
-        { <span style="color:var(--ah)">"from"</span>:<span style="color:var(--fk-t)">"a"</span>, <span style="color:var(--ah)">"to"</span>:<span style="color:var(--fk-t)">"b"</span>, <span style="color:var(--ah)">"label"</span>:<span style="color:var(--fk-t)">"FK_COL"</span>, <span style="color:var(--ah)">"cardinality"</span>:<span style="color:var(--fk-t)">"1:N"</span> }
+        {
+          <span style="color:var(--ah)">"from"</span>:<span style="color:var(--fk-t)">"a"</span>,
+          <span style="color:var(--ah)">"to"</span>:<span style="color:var(--fk-t)">"b"</span>,
+          <span style="color:var(--ah)">"fromCol"</span>:<span style="color:var(--fk-t)">"ID"</span>,           <span style="color:var(--t3)">// column on the "from" table</span>
+          <span style="color:var(--ah)">"toCol"</span>:<span style="color:var(--fk-t)">"CUSTOMER_ID"</span>,   <span style="color:var(--t3)">// column on the "to" table</span>
+          <span style="color:var(--ah)">"cardinality"</span>:<span style="color:var(--fk-t)">"1:N"</span>
+        }
       ],
       <span style="color:var(--ah)">"layout"</span>: { <span style="color:var(--ah)">"table_id"</span>: [<span style="color:var(--mx-t)">60</span>, <span style="color:var(--mx-t)">60</span>] }
     }
@@ -311,7 +317,16 @@ function bw(l){return l.length*6+11;}
 function totalBW(f){let w=0;if(f.t==='pk')w+=bw('PK')+3;if(f.t==='fk')w+=bw('FK')+3;if(f.pi)w+=bw('PI')+3;if(f.masked)w+=bw('M')+3;return w>0?w-3:0;}
 function TW(t){let mx=0;(t.fields||[]).forEach(f=>{const B=totalBW(f)+(totalBW(f)>0?10:0);mx=Math.max(mx,Math.max((f.n||'').length*CH_N,(f.dt||'').length*CH_D)+B+PAD*2);});return Math.max(200,Math.min(480,Math.ceil(Math.max(mx,(t.name||'').length*CH_N+PAD*2+64))));}
 function TH(t){const tot=(t.fields||[]).length,exp=!!expandedTables[t.id],vis=(!exp&&tot>COLLAPSE_AT)?PREVIEW:tot;return TH_HEAD+vis*TH_ROW+(tot>COLLAPSE_AT?TH_EXP:4);}
-function ED(e){return Array.isArray(e)?{from:e[0],to:e[1],label:e[2]||'',cardinality:'1:N'}:e;}
+function ED(e){
+  if(Array.isArray(e)) return{from:e[0],to:e[1],label:e[2]||'',cardinality:'1:N',fromCol:'',toCol:''};
+  // Support both formats:
+  //   { label: "customer.ID = order.CUSTOMER_ID" }   ← legacy free-text
+  //   { fromCol: "ID", toCol: "CUSTOMER_ID" }         ← explicit (preferred)
+  const r=Object.assign({cardinality:'1:N',fromCol:'',toCol:'',label:''},e);
+  // If fromCol/toCol provided, synthesize a label from them
+  if(r.fromCol&&r.toCol&&!r.label) r.label=`${r.fromCol} = ${r.toCol}`;
+  return r;
+}
 
 const NS='http://www.w3.org/2000/svg';
 const S=(tag,a={})=>{const e=document.createElementNS(NS,tag);Object.entries(a).forEach(([k,v])=>e.setAttribute(k,v));return e;};
@@ -439,10 +454,106 @@ function renderERD(){
     g.appendChild(hit);
     g.appendChild(S('path',{d:pd,fill:'none',stroke:active?color:'rgba(128,128,150,0.22)','stroke-width':active?2:1,'stroke-dasharray':active?'none':'5 4','stroke-linecap':'round','marker-end':'url(#arr)'}));
     if(active){
-      const lbl=`${e.label}  ${e.cardinality||'1:N'}`,lw=lbl.length*5.8+16;
-      g.appendChild(S('rect',{x:mx-lw/2,y:my-10,width:lw,height:18,rx:9,fill:color,opacity:.9}));
-      const lt=S('text',{x:mx,y:my+1,'text-anchor':'middle','dominant-baseline':'central',fill:'#fff',fontSize:9,fontWeight:700,fontFamily:'monospace'});
-      lt.textContent=lbl;g.appendChild(lt);
+      // ── Build join label lines ──────────────────────────────────────────
+      // Line 1: join condition  e.g.  customer.ID = order.CUSTOMER_ID
+      // Line 2: cardinality    e.g.  1:N
+      const fromTable = tables.find(t=>t.id===e.from);
+      const toTable   = tables.find(t=>t.id===e.to);
+      let joinLine = e.label || '';
+      // If fromCol/toCol exist, render them as  TABLE.COL = TABLE.COL
+      if(e.fromCol && e.toCol){
+        const fn_= (fromTable?.name||e.from)+'.'+e.fromCol;
+        const tn_ = (toTable?.name||e.to)+'.'+e.toCol;
+        joinLine = `${fn_} = ${tn_}`;
+      }
+      const cardLine  = e.cardinality||'1:N';
+
+      // ── Measure text widths precisely ──────────────────────────────────
+      const FONT_JOIN = 9.5, FONT_CARD = 9, MONO_W = 6.0; // monospace ch width at 9.5px
+      const joinW  = joinLine.length  * MONO_W;
+      const cardW  = cardLine.length * (MONO_W*0.95);
+      const HPAD=12, VPAD=8, LINE_GAP=14;
+
+      // Card dimensions
+      const cardW_ = Math.max(joinW, cardW) + HPAD*2;
+      const cardH  = joinLine ? VPAD*2 + LINE_GAP + 12 : VPAD*2 + 14;
+
+      // Position: mid-point of edge, offset slightly so it doesn't sit on the line
+      const cx = mx - cardW_/2;
+      const cy = my - cardH/2 - 2;
+
+      // ── Card background ───────────────────────────────────────────────
+      // Outer glow
+      g.appendChild(S('rect',{x:cx-2,y:cy-2,width:cardW_+4,height:cardH+4,rx:10,
+        fill:color,opacity:0.15}));
+      // Main card
+      g.appendChild(S('rect',{x:cx,y:cy,width:cardW_,height:cardH,rx:8,
+        fill:'#1a1a20',stroke:color,'stroke-width':1.5,opacity:1}));
+
+      // ── Join condition (line 1) ───────────────────────────────────────
+      if(joinLine){
+        // "from" side — table name dimmed, col name bright
+        const eq = joinLine.indexOf('=');
+        if(eq>-1){
+          const left  = joinLine.slice(0,eq).trim();   // e.g. "CUSTOMER.ID"
+          const right = joinLine.slice(eq+1).trim();   // e.g. "ORDER.CUSTOMER_ID"
+          const dot1  = left.indexOf('.');
+          const dot2  = right.indexOf('.');
+
+          // Render left side: TABLE.COL
+          let curX = cx + HPAD;
+          const ly = cy + VPAD + 6;
+
+          if(dot1>-1){
+            const tbl_=left.slice(0,dot1+1); // "CUSTOMER."
+            const col_=left.slice(dot1+1);   // "ID"
+            const t1=S('text',{x:curX,y:ly,'dominant-baseline':'central',fill:color,opacity:.55,fontSize:FONT_JOIN,fontFamily:'monospace'});
+            t1.textContent=tbl_; g.appendChild(t1);
+            curX += tbl_.length*MONO_W;
+            const t2=S('text',{x:curX,y:ly,'dominant-baseline':'central',fill:'#fff',fontSize:FONT_JOIN,fontWeight:700,fontFamily:'monospace'});
+            t2.textContent=col_; g.appendChild(t2);
+            curX += col_.length*MONO_W;
+          } else {
+            const t1=S('text',{x:curX,y:ly,'dominant-baseline':'central',fill:'#fff',fontSize:FONT_JOIN,fontWeight:700,fontFamily:'monospace'});
+            t1.textContent=left; g.appendChild(t1); curX+=left.length*MONO_W;
+          }
+          // "=" operator
+          const eq_=S('text',{x:curX+4,y:ly,'dominant-baseline':'central',fill:color,fontSize:FONT_JOIN,fontWeight:700,fontFamily:'monospace'});
+          eq_.textContent='='; g.appendChild(eq_); curX+=MONO_W+8;
+
+          // Render right side: TABLE.COL
+          if(dot2>-1){
+            const tbl_=right.slice(0,dot2+1);
+            const col_=right.slice(dot2+1);
+            const t3=S('text',{x:curX,y:ly,'dominant-baseline':'central',fill:color,opacity:.55,fontSize:FONT_JOIN,fontFamily:'monospace'});
+            t3.textContent=tbl_; g.appendChild(t3);
+            curX+=tbl_.length*MONO_W;
+            const t4=S('text',{x:curX,y:ly,'dominant-baseline':'central',fill:'#fff',fontSize:FONT_JOIN,fontWeight:700,fontFamily:'monospace'});
+            t4.textContent=col_; g.appendChild(t4);
+          } else {
+            const t3=S('text',{x:curX,y:ly,'dominant-baseline':'central',fill:'#fff',fontSize:FONT_JOIN,fontWeight:700,fontFamily:'monospace'});
+            t3.textContent=right; g.appendChild(t3);
+          }
+        } else {
+          // No "=" — render as plain label
+          const lt=S('text',{x:cx+HPAD,y:cy+VPAD+6,'dominant-baseline':'central',fill:'#fff',fontSize:FONT_JOIN,fontWeight:600,fontFamily:'monospace'});
+          lt.textContent=joinLine; g.appendChild(lt);
+        }
+
+        // Divider between join line and cardinality
+        g.appendChild(S('line',{x1:cx+8,y1:cy+VPAD+LINE_GAP-1,x2:cx+cardW_-8,y2:cy+VPAD+LINE_GAP-1,
+          stroke:color,opacity:.2,'stroke-width':0.8}));
+
+        // Cardinality (line 2)
+        const ct=S('text',{x:cx+cardW_/2,y:cy+VPAD+LINE_GAP+8,'text-anchor':'middle','dominant-baseline':'central',
+          fill:color,fontSize:FONT_CARD,fontWeight:700,fontFamily:'monospace',opacity:.9});
+        ct.textContent=cardLine; g.appendChild(ct);
+      } else {
+        // No join line — just cardinality centred
+        const ct=S('text',{x:cx+cardW_/2,y:cy+cardH/2,'text-anchor':'middle','dominant-baseline':'central',
+          fill:color,fontSize:FONT_CARD,fontWeight:700,fontFamily:'monospace'});
+        ct.textContent=cardLine; g.appendChild(ct);
+      }
     }
     gE.appendChild(g);
   });
@@ -537,7 +648,19 @@ function openDrawer(table,d,edges,tables){
   (table.fields||[]).forEach(f=>{const bdgs=tagBadges(f).map(b=>`<span class="tag t-${b.l.toLowerCase()}">${b.l}</span>`).join('');const row=document.createElement('div');row.className='dfield';row.innerHTML=`<span class="dfn">${f.n}</span><span class="dft">${f.dt||''}</span><div style="display:flex;gap:3px">${bdgs}</div>`;if(f.note)row.title=f.note;fs.appendChild(row);});
   body.appendChild(fs);
   const rels=(edges||[]).map(ED).filter(e=>e.from===table.id||e.to===table.id);
-  if(rels.length){const rs=document.createElement('div');rs.className='dsec';rs.innerHTML=`<div class="dsec-t">Relationships (${rels.length})</div>`;rels.forEach(e=>{const other=e.from===table.id?e.to:e.from;const ot=tables.find(t=>t.id===other);const row=document.createElement('div');row.className='rel-chip';row.innerHTML=`<span class="rel-dir">${e.from===table.id?'→':'←'}</span><span class="rel-tn">${ot?.name||other}</span><span class="rel-via">via ${e.label}</span>`;row.onclick=()=>{selectedTable=other;renderERD();openDrawer(ot,d,edges,tables);};rs.appendChild(row);});body.appendChild(rs);}
+  if(rels.length){const rs=document.createElement('div');rs.className='dsec';rs.innerHTML=`<div class="dsec-t">Relationships (${rels.length})</div>`;rels.forEach(e=>{const other=e.from===table.id?e.to:e.from;const ot=tables.find(t=>t.id===other);const dir=e.from===table.id?'→':'←';
+    // Build join info line
+    let joinInfo='';
+    if(e.fromCol&&e.toCol){
+      const leftCol  = e.from===table.id ? e.fromCol : e.toCol;
+      const rightCol = e.from===table.id ? e.toCol   : e.fromCol;
+      joinInfo=`<div style="font-size:10px;font-family:var(--mono);color:var(--t3);margin-top:3px;padding-left:18px">${table.name}.<span style="color:var(--ah)">${leftCol}</span> = ${ot?.name||other}.<span style="color:var(--ah)">${rightCol}</span></div>`;
+    } else if(e.label){
+      joinInfo=`<div style="font-size:10px;font-family:var(--mono);color:var(--t3);margin-top:3px;padding-left:18px">${e.label}</div>`;
+    }
+    const row=document.createElement('div');row.className='rel-chip';row.style.flexDirection='column';row.style.alignItems='flex-start';row.style.gap='0';
+    row.innerHTML=`<div style="display:flex;align-items:center;gap:6px;width:100%"><span class="rel-dir">${dir}</span><span class="rel-tn">${ot?.name||other}</span><span class="rel-via">${e.cardinality||'1:N'}</span></div>${joinInfo}`;
+    row.onclick=()=>{selectedTable=other;renderERD();openDrawer(ot,d,edges,tables);};rs.appendChild(row);});body.appendChild(rs);}
   if(table.note){const ns=document.createElement('div');ns.className='dsec';ns.innerHTML=`<div class="dsec-t">Notes</div><div style="font-size:11px;color:var(--t2);line-height:1.6">${table.note}</div>`;body.appendChild(ns);}
   document.getElementById('drawer').classList.add('open');
 }
