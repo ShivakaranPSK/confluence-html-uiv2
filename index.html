@@ -303,7 +303,7 @@ code{background:var(--s2);padding:1px 5px;border-radius:3px;font-family:var(--mo
 // ══════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════
-let data=null, domain=null, selectedTable=null, hoveredEdge=null;
+let data=null, domain=null, selectedTable=null;
 let panX=0, panY=0, scale=1, isPanning=false, panStart_={x:0,y:0};
 let dragging=null, dragOffset={x:0,y:0}, dragMoved=false;
 const expandedTables={};
@@ -443,110 +443,108 @@ function renderERD(){
   edges.forEach((raw,i)=>{
     const e=ED(raw);const pts=edgePts(layout,e.from,e.to,tables);if(!pts)return;
     const[x1,y1,x2,y2]=pts,dx=x2-x1,dy=y2-y1;
-    const active      = hoveredEdge===i||(selectedTable&&(e.from===selectedTable||e.to===selectedTable));
-    const showLabel   = hoveredEdge===i;
+    const active = selectedTable&&(e.from===selectedTable||e.to===selectedTable);
     const pd=(Math.abs(dx)>10&&Math.abs(dy)>10)?`M${x1} ${y1} C${x1+dx*.45} ${y1} ${x2-dx*.45} ${y2} ${x2} ${y2}`:`M${x1} ${y1} L${x2} ${y2}`;
     const mx=(x1+x2)/2,my=(y1+y2)/2;
+
     const g=S('g');g.style.cursor='pointer';
-    g.onmouseenter=()=>{hoveredEdge=i;renderERD();};
-    g.onmouseleave=()=>{hoveredEdge=null;renderERD();};
-    if(active)g.appendChild(S('path',{d:pd,fill:'none',stroke:color,'stroke-width':6,opacity:.1,'stroke-linecap':'round'}));
+
+    // ── Glow path (only when active/hovered — toggled via JS) ────────
+    const glowPath=S('path',{d:pd,fill:'none',stroke:color,'stroke-width':6,opacity:.1,'stroke-linecap':'round',display:'none'});
+    g.appendChild(glowPath);
+
+    // Wide transparent hit area
     const hit=S('path',{d:pd,fill:'none',stroke:'transparent','stroke-width':14});
     g.appendChild(hit);
-    g.appendChild(S('path',{d:pd,fill:'none',stroke:active?color:'rgba(128,128,150,0.22)','stroke-width':active?2:1,'stroke-dasharray':active?'none':'5 4','stroke-linecap':'round','marker-end':'url(#arr)'}));
 
-    if(showLabel){
-      const fromTable = tables.find(t=>t.id===e.from);
-      const toTable   = tables.find(t=>t.id===e.to);
+    // Visible line — starts dimmed, brightens on hover
+    const linePath=S('path',{d:pd,fill:'none',
+      stroke: active ? color : 'rgba(128,128,150,0.22)',
+      'stroke-width': active ? 2 : 1,
+      'stroke-dasharray': active ? 'none' : '5 4',
+      'stroke-linecap':'round','marker-end':'url(#arr)'});
+    g.appendChild(linePath);
 
-      // Build join string
-      let joinLine = '';
-      if(e.fromCol && e.toCol){
-        joinLine = `${fromTable?.name||e.from}.${e.fromCol} = ${toTable?.name||e.to}.${e.toCol}`;
-      } else if(e.label){
-        joinLine = e.label;
-      }
-      const cardLine = e.cardinality || '1:N';
-
-      // ── Measure with canvas (no DOM needed, always accurate) ──────────
-      const _c = document.createElement('canvas').getContext('2d');
-      const FONT_SZ = 10;
-      _c.font = `700 ${FONT_SZ}px monospace`;
-      const joinW  = joinLine ? _c.measureText(joinLine).width : 0;
-      _c.font = `700 ${FONT_SZ}px monospace`;
-      const cardW  = _c.measureText(cardLine).width;
-
-      const HPAD   = 10, VPAD = 6;
-      const ROW_H  = FONT_SZ + VPAD * 2;           // height of each row
-      const hasJoin = joinLine.length > 0;
-      const innerW  = Math.max(joinW, cardW);
-      const cardW_  = Math.ceil(innerW) + HPAD * 2;
-      const cardH_  = hasJoin ? ROW_H * 2 + 1 : ROW_H; // +1 for divider px
-
-      // Centre on edge midpoint
-      const cx = mx - cardW_ / 2;
-      const cy = my - cardH_ / 2;
-
-      // Glow + card background
-      g.appendChild(S('rect',{x:cx-3,y:cy-3,width:cardW_+6,height:cardH_+6,rx:10,fill:color,opacity:.14}));
-      g.appendChild(S('rect',{x:cx,y:cy,width:cardW_,height:cardH_,rx:7,fill:'#12121a',stroke:color,'stroke-width':1.2}));
-
-      if(hasJoin){
-        // ── Join line (top row) with tspan colouring ──────────────────
-        const joinY = cy + ROW_H / 2;
-        const eqIdx = joinLine.indexOf('=');
-        const left  = eqIdx > -1 ? joinLine.slice(0, eqIdx).trim() : joinLine;
-        const right = eqIdx > -1 ? joinLine.slice(eqIdx + 1).trim() : '';
-        const dot1  = left.indexOf('.');
-        const dot2  = right.indexOf('.');
-
-        // Build one <text> with tspans — browser lays them out inline
-        const jt = S('text',{
-          x: cx + HPAD + (innerW - joinW) / 2,
-          y: joinY,
-          'font-family':'monospace','font-size':FONT_SZ,
-          'dominant-baseline':'central'
-        });
-        const mkSpan = (txt, bold, muted) => {
-          const sp = document.createElementNS(NS,'tspan');
-          sp.textContent = txt;
-          sp.setAttribute('fill', muted ? color : '#ffffff');
-          if(muted)  sp.setAttribute('opacity','0.55');
-          if(bold)   sp.setAttribute('font-weight','700');
-          return sp;
-        };
-        if(dot1 > -1){ jt.appendChild(mkSpan(left.slice(0,dot1+1), false, true)); jt.appendChild(mkSpan(left.slice(dot1+1), true, false)); }
-        else          { jt.appendChild(mkSpan(left, true, false)); }
-        jt.appendChild(mkSpan(' = ', true, true));
-        if(right){
-          if(dot2 > -1){ jt.appendChild(mkSpan(right.slice(0,dot2+1), false, true)); jt.appendChild(mkSpan(right.slice(dot2+1), true, false)); }
-          else          { jt.appendChild(mkSpan(right, true, false)); }
-        }
-        g.appendChild(jt);
-
-        // Divider
-        g.appendChild(S('line',{x1:cx+6,y1:cy+ROW_H,x2:cx+cardW_-6,y2:cy+ROW_H,stroke:color,opacity:.25,'stroke-width':0.8}));
-
-        // ── Cardinality (bottom row) ──────────────────────────────────
-        const ct = S('text',{
-          x: mx, y: cy + ROW_H + ROW_H / 2,
-          'text-anchor':'middle','dominant-baseline':'central',
-          'font-family':'monospace','font-size':FONT_SZ,'font-weight':'700',fill:color
-        });
-        ct.textContent = cardLine;
-        g.appendChild(ct);
-
-      } else {
-        // No join — just cardinality pill
-        const ct = S('text',{
-          x: mx, y: cy + cardH_ / 2,
-          'text-anchor':'middle','dominant-baseline':'central',
-          'font-family':'monospace','font-size':FONT_SZ,'font-weight':'700',fill:color
-        });
-        ct.textContent = cardLine;
-        g.appendChild(ct);
-      }
+    // ── Build label card (always rendered, starts hidden) ─────────────
+    const fromTable = tables.find(t=>t.id===e.from);
+    const toTable   = tables.find(t=>t.id===e.to);
+    let joinLine = '';
+    if(e.fromCol && e.toCol){
+      joinLine = `${fromTable?.name||e.from}.${e.fromCol} = ${toTable?.name||e.to}.${e.toCol}`;
+    } else if(e.label){
+      joinLine = e.label;
     }
+    const cardLine = e.cardinality || '1:N';
+
+    // Measure with canvas
+    const _c = document.createElement('canvas').getContext('2d');
+    const FONT_SZ=10, HPAD=10, VPAD=6;
+    _c.font=`700 ${FONT_SZ}px monospace`;
+    const joinW = joinLine ? _c.measureText(joinLine).width : 0;
+    const cardW = _c.measureText(cardLine).width;
+    const ROW_H = FONT_SZ + VPAD*2;
+    const hasJoin = joinLine.length > 0;
+    const innerW = Math.max(joinW, cardW);
+    const cardW_ = Math.ceil(innerW) + HPAD*2;
+    const cardH_ = hasJoin ? ROW_H*2+1 : ROW_H;
+    const cx = mx - cardW_/2, cy = my - cardH_/2;
+
+    // Label group — hidden by default
+    const labelG = S('g',{display:'none'});
+
+    labelG.appendChild(S('rect',{x:cx-3,y:cy-3,width:cardW_+6,height:cardH_+6,rx:10,fill:color,opacity:.14}));
+    labelG.appendChild(S('rect',{x:cx,y:cy,width:cardW_,height:cardH_,rx:7,fill:'#12121a',stroke:color,'stroke-width':1.2}));
+
+    const mkSpan=(txt,bold,muted)=>{
+      const sp=document.createElementNS(NS,'tspan');
+      sp.textContent=txt;
+      sp.setAttribute('fill', muted ? color : '#ffffff');
+      if(muted)  sp.setAttribute('opacity','0.55');
+      if(bold)   sp.setAttribute('font-weight','700');
+      return sp;
+    };
+
+    if(hasJoin){
+      const eqIdx=joinLine.indexOf('=');
+      const left =eqIdx>-1?joinLine.slice(0,eqIdx).trim():joinLine;
+      const right=eqIdx>-1?joinLine.slice(eqIdx+1).trim():'';
+      const dot1=left.indexOf('.'), dot2=right.indexOf('.');
+      const jt=S('text',{x:cx+HPAD+(innerW-joinW)/2,y:cy+ROW_H/2,'font-family':'monospace','font-size':FONT_SZ,'dominant-baseline':'central'});
+      if(dot1>-1){jt.appendChild(mkSpan(left.slice(0,dot1+1),false,true));jt.appendChild(mkSpan(left.slice(dot1+1),true,false));}
+      else{jt.appendChild(mkSpan(left,true,false));}
+      jt.appendChild(mkSpan(' = ',true,true));
+      if(right){
+        if(dot2>-1){jt.appendChild(mkSpan(right.slice(0,dot2+1),false,true));jt.appendChild(mkSpan(right.slice(dot2+1),true,false));}
+        else{jt.appendChild(mkSpan(right,true,false));}
+      }
+      labelG.appendChild(jt);
+      labelG.appendChild(S('line',{x1:cx+6,y1:cy+ROW_H,x2:cx+cardW_-6,y2:cy+ROW_H,stroke:color,opacity:.25,'stroke-width':0.8}));
+      const ct=S('text',{x:mx,y:cy+ROW_H+ROW_H/2,'text-anchor':'middle','dominant-baseline':'central','font-family':'monospace','font-size':FONT_SZ,'font-weight':'700',fill:color});
+      ct.textContent=cardLine; labelG.appendChild(ct);
+    } else {
+      const ct=S('text',{x:mx,y:cy+cardH_/2,'text-anchor':'middle','dominant-baseline':'central','font-family':'monospace','font-size':FONT_SZ,'font-weight':'700',fill:color});
+      ct.textContent=cardLine; labelG.appendChild(ct);
+    }
+    g.appendChild(labelG);
+
+    // ── Hover: toggle label + line style purely via DOM, no re-render ──
+    hit.addEventListener('mouseenter',()=>{
+      labelG.setAttribute('display','block');
+      glowPath.setAttribute('display','block');
+      linePath.setAttribute('stroke', color);
+      linePath.setAttribute('stroke-width','2');
+      linePath.removeAttribute('stroke-dasharray');
+    });
+    hit.addEventListener('mouseleave',()=>{
+      labelG.setAttribute('display','none');
+      glowPath.setAttribute('display','none');
+      if(!active){
+        linePath.setAttribute('stroke','rgba(128,128,150,0.22)');
+        linePath.setAttribute('stroke-width','1');
+        linePath.setAttribute('stroke-dasharray','5 4');
+      }
+    });
+
     gE.appendChild(g);
   });
 
