@@ -3,7 +3,7 @@
   "updatedAt": "2026-04-28",
   "updatedBy": "data-pipeline",
   "domains": {
-    "orders": {
+    "orders1": {
       "label": "Orders & Customers",
       "color": "#6366f1",
       "tables": [
@@ -57,7 +57,7 @@
         "order":    [480, 60]
       }
     },
-    "customers" :{
+    "customers1" :{
       "label": "Orders & Customers tab 2",
       "color": "#6366f1",
       "tables": [
