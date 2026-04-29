@@ -458,142 +458,133 @@ function renderERD(){
       const fromTable = tables.find(t=>t.id===e.from);
       const toTable   = tables.find(t=>t.id===e.to);
 
-      // Build the two display strings
-      let joinLine = e.label || '';
+      // Build join string
+      let joinLine = '';
       if(e.fromCol && e.toCol){
         joinLine = `${fromTable?.name||e.from}.${e.fromCol} = ${toTable?.name||e.to}.${e.toCol}`;
+      } else if(e.label){
+        joinLine = e.label;
       }
       const cardLine = e.cardinality || '1:N';
-      const HPAD=14, VPAD=8;
+      const HPAD=14, VPAD=9;
 
-      // ── Step 1: render text nodes into a hidden staging group ──────────
-      // We render, measure with getBBox(), then size and position the
-      // background rect to exactly fit. No character-width guessing.
+      // ── Render a SINGLE <text> with <tspan> children ─────────────────
+      // One text element = one getBBox() call = correct width, always.
+      // tspans handle per-segment colour; they all share the same baseline.
 
-      const labelGroup = S('g');
-
-      // Cardinality badge (always shown, compact)
-      const cardText = S('text',{
-        x:0, y:0,
-        'text-anchor':'middle','dominant-baseline':'central',
-        fill:color, fontSize:10, fontWeight:700, fontFamily:'monospace'
+      const joinTextEl = S('text',{
+        x:0, y:0, 'font-family':'monospace', 'font-size':'11',
+        'dominant-baseline':'central'
       });
-      cardText.textContent = cardLine;
 
       if(joinLine){
-        // ── Styled join line: render each segment, measure, then backdrop ──
-
-        // Parse: LEFT = RIGHT  where LEFT/RIGHT may be TABLE.COL
         const eqIdx = joinLine.indexOf('=');
         const left  = eqIdx>-1 ? joinLine.slice(0,eqIdx).trim() : joinLine;
         const right = eqIdx>-1 ? joinLine.slice(eqIdx+1).trim() : '';
-
         const dot1  = left.indexOf('.');
         const dot2  = right.indexOf('.');
 
-        // Render all text segments at x=0 first; we'll shift after measuring
-        const segs = []; // {el, isCol}
-
+        // LEFT side
         if(dot1>-1){
-          const tPre=S('text',{'dominant-baseline':'central',fill:color,opacity:.6,fontSize:10,fontFamily:'monospace'});
-          tPre.textContent=left.slice(0,dot1+1); // "TABLE."
-          const tCol=S('text',{'dominant-baseline':'central',fill:'#fff',fontSize:10,fontWeight:700,fontFamily:'monospace'});
-          tCol.textContent=left.slice(dot1+1);   // "COL"
-          segs.push(tPre,tCol);
+          const sp1=document.createElementNS(NS,'tspan');
+          sp1.textContent=left.slice(0,dot1+1);
+          sp1.setAttribute('fill',color); sp1.setAttribute('opacity','0.6');
+          joinTextEl.appendChild(sp1);
+          const sp2=document.createElementNS(NS,'tspan');
+          sp2.textContent=left.slice(dot1+1);
+          sp2.setAttribute('fill','#ffffff'); sp2.setAttribute('font-weight','700');
+          joinTextEl.appendChild(sp2);
         } else {
-          const t=S('text',{'dominant-baseline':'central',fill:'#fff',fontSize:10,fontWeight:700,fontFamily:'monospace'});
-          t.textContent=left; segs.push(t);
+          const sp=document.createElementNS(NS,'tspan');
+          sp.textContent=left; sp.setAttribute('fill','#ffffff'); sp.setAttribute('font-weight','700');
+          joinTextEl.appendChild(sp);
         }
 
-        const tEq=S('text',{'dominant-baseline':'central',fill:color,fontSize:10,fontWeight:700,fontFamily:'monospace'});
-        tEq.textContent=' = '; segs.push(tEq);
+        // " = "
+        const spEq=document.createElementNS(NS,'tspan');
+        spEq.textContent=' = '; spEq.setAttribute('fill',color); spEq.setAttribute('font-weight','700');
+        joinTextEl.appendChild(spEq);
 
+        // RIGHT side
         if(right){
           if(dot2>-1){
-            const tPre=S('text',{'dominant-baseline':'central',fill:color,opacity:.6,fontSize:10,fontFamily:'monospace'});
-            tPre.textContent=right.slice(0,dot2+1);
-            const tCol=S('text',{'dominant-baseline':'central',fill:'#fff',fontSize:10,fontWeight:700,fontFamily:'monospace'});
-            tCol.textContent=right.slice(dot2+1);
-            segs.push(tPre,tCol);
+            const sp3=document.createElementNS(NS,'tspan');
+            sp3.textContent=right.slice(0,dot2+1);
+            sp3.setAttribute('fill',color); sp3.setAttribute('opacity','0.6');
+            joinTextEl.appendChild(sp3);
+            const sp4=document.createElementNS(NS,'tspan');
+            sp4.textContent=right.slice(dot2+1);
+            sp4.setAttribute('fill','#ffffff'); sp4.setAttribute('font-weight','700');
+            joinTextEl.appendChild(sp4);
           } else {
-            const t=S('text',{'dominant-baseline':'central',fill:'#fff',fontSize:10,fontWeight:700,fontFamily:'monospace'});
-            t.textContent=right; segs.push(t);
+            const sp=document.createElementNS(NS,'tspan');
+            sp.textContent=right; sp.setAttribute('fill','#ffffff'); sp.setAttribute('font-weight','700');
+            joinTextEl.appendChild(sp);
           }
         }
+      }
 
-        // Append to DOM so getBBox() works, all at y=0 x=0 initially
-        segs.forEach(el=>{ el.setAttribute('y','0'); el.setAttribute('x','0'); labelGroup.appendChild(el); });
-        labelGroup.appendChild(cardText);
-        svg.appendChild(labelGroup);
+      // Cardinality text
+      const cardTextEl = S('text',{
+        x:0, y:0, 'font-family':'monospace', 'font-size':'10',
+        'font-weight':'700', 'dominant-baseline':'central',
+        'text-anchor':'middle', fill:color
+      });
+      cardTextEl.textContent = cardLine;
 
-        // ── Step 2: lay out segments left-to-right using actual bbox widths ──
-        const LINE_Y = 0;
-        const CARD_Y = 18; // below join line
-        let curX = 0;
-        segs.forEach(el=>{
-          el.setAttribute('x', curX);
-          el.setAttribute('y', LINE_Y);
-          try{ curX += el.getBBox().width; } catch(e){ curX += el.textContent.length*6.2; }
-        });
-        const joinW = curX;
+      // ── Measure by temporarily attaching to the live SVG ─────────────
+      // Attach off-screen so layout engine resolves font metrics
+      const probe = S('g',{visibility:'hidden'});
+      svg.appendChild(probe);
+      probe.appendChild(joinTextEl);
+      probe.appendChild(cardTextEl);
 
-        // Measure cardinality text
-        cardText.setAttribute('x', joinW/2);
-        cardText.setAttribute('y', CARD_Y + 8);
-        let cardW2 = 40;
-        try{ cardW2 = cardText.getBBox().width; } catch(e){}
+      let joinW=0, joinH=14, cardW=30;
+      try{ const b=joinTextEl.getBBox(); joinW=b.width; joinH=Math.max(b.height,12); }catch(_){}
+      try{ cardW=cardTextEl.getBBox().width; }catch(_){}
+      svg.removeChild(probe);
 
-        // ── Step 3: size the card to fit both lines ───────────────────────
-        const innerW = Math.max(joinW, cardW2);
-        const cardW_ = innerW + HPAD*2;
-        const cardH_ = VPAD + CARD_Y + 16 + VPAD;
+      // ── Size the card ─────────────────────────────────────────────────
+      const hasJoin = joinLine.length > 0;
+      const innerW  = Math.max(joinW, cardW);
+      const cardW_  = innerW + HPAD*2;
+      const joinRowH = hasJoin ? joinH + VPAD*2 : 0;
+      const cardRowH = 20;
+      const divH    = hasJoin ? 1 : 0;
+      const cardH_  = joinRowH + divH + cardRowH + (hasJoin ? 0 : VPAD*2-8);
 
-        // Offset everything so card is centred on edge midpoint
-        const cx = mx - cardW_/2;
-        const cy = my - cardH_/2;
+      // Centre over midpoint of edge
+      const cx = mx - cardW_/2;
+      const cy = my - cardH_/2;
 
-        // Shift all segments into position
-        segs.forEach(el=>{
-          el.setAttribute('x', parseFloat(el.getAttribute('x')) + cx + HPAD + (innerW-joinW)/2);
-          el.setAttribute('y', cy + VPAD + 10);
-        });
-        cardText.setAttribute('x', mx); // already text-anchor:middle
-        cardText.setAttribute('y', cy + VPAD + 10 + CARD_Y);
+      // ── Draw: glow → background → border → divider → text ────────────
+      // Glow
+      g.appendChild(S('rect',{x:cx-4,y:cy-4,width:cardW_+8,height:cardH_+8,rx:13,fill:color,opacity:.12}));
+      // Card
+      g.appendChild(S('rect',{x:cx,y:cy,width:cardW_,height:cardH_,rx:9,fill:'#12121a',stroke:color,'stroke-width':1.5}));
 
-        // Divider between join line and cardinality
-        const divider = S('line',{
-          x1:cx+10, y1:cy+VPAD+18, x2:cx+cardW_-10, y2:cy+VPAD+18,
-          stroke:color, opacity:.22, 'stroke-width':0.8
-        });
+      if(hasJoin){
+        // Position join text: vertically centred in top zone
+        joinTextEl.setAttribute('x', cx + HPAD + (innerW-joinW)/2);
+        joinTextEl.setAttribute('y', cy + joinRowH/2);
+        g.appendChild(joinTextEl);
 
-        // ── Step 4: insert background BEHIND the text ─────────────────────
-        // Remove from DOM, re-insert in correct z-order: glow → card → divider → text
-        svg.removeChild(labelGroup);
-        const glow = S('rect',{x:cx-3,y:cy-3,width:cardW_+6,height:cardH_+6,rx:12,fill:color,opacity:.12});
-        const card = S('rect',{x:cx,y:cy,width:cardW_,height:cardH_,rx:9,fill:'#12121a',stroke:color,'stroke-width':1.5});
-        g.appendChild(glow);
-        g.appendChild(card);
-        g.appendChild(divider);
-        segs.forEach(el=>g.appendChild(el));
-        g.appendChild(cardText);
+        // Divider
+        g.appendChild(S('line',{
+          x1:cx+10, y1:cy+joinRowH,
+          x2:cx+cardW_-10, y2:cy+joinRowH,
+          stroke:color, opacity:.25, 'stroke-width':0.8
+        }));
 
+        // Cardinality: centred in bottom zone
+        cardTextEl.setAttribute('x', mx);
+        cardTextEl.setAttribute('y', cy + joinRowH + cardRowH/2);
+        g.appendChild(cardTextEl);
       } else {
-        // No join line — just cardinality pill
-        labelGroup.appendChild(cardText);
-        cardText.setAttribute('x', mx);
-        cardText.setAttribute('y', my);
-        svg.appendChild(labelGroup);
-
-        let cardTextW = 40;
-        try{ cardTextW = cardText.getBBox().width; } catch(e){}
-        svg.removeChild(labelGroup);
-
-        const pillW = cardTextW + HPAD*2;
-        const pillH = 20;
-        g.appendChild(S('rect',{x:mx-pillW/2,y:my-pillH/2,width:pillW,height:pillH,rx:10,fill:'#12121a',stroke:color,'stroke-width':1.5}));
-        cardText.setAttribute('x', mx);
-        cardText.setAttribute('y', my);
-        g.appendChild(cardText);
+        // No join — just cardinality centred in card
+        cardTextEl.setAttribute('x', mx);
+        cardTextEl.setAttribute('y', cy + cardH_/2);
+        g.appendChild(cardTextEl);
       }
     }
     gE.appendChild(g);
