@@ -352,10 +352,24 @@ async function loadSchema(manual=false){
     if(!res.ok) throw new Error(`HTTP ${res.status} — schema.json not found`);
     const raw=await res.json();
     if(!raw.domains) throw new Error('"domains" key missing in schema.json');
+
+    // Validate layout keys match table IDs — common mistake
+    const warnings = [];
+    Object.entries(raw.domains).forEach(([domKey, dom]) => {
+      const tableIds = new Set((dom.tables||[]).map(t=>t.id));
+      const layoutKeys = Object.keys(dom.layout||{});
+      const mismatched = layoutKeys.filter(k=>!tableIds.has(k));
+      if(mismatched.length){
+        warnings.push(`Domain "${domKey}": layout keys [${mismatched.join(', ')}] don't match any table id — tables will be invisible. Use Auto layout to fix.`);
+      }
+    });
+    if(warnings.length) console.warn('ERD schema warnings:\n'+warnings.join('\n'));
     data=raw; domain=Object.keys(raw.domains)[0];
     selectedTable=null;
     Object.keys(expandedTables).forEach(k=>delete expandedTables[k]);
     document.getElementById('empty').classList.add('hidden');
+    // Page title and header driven entirely from JSON
+    document.title = raw.title ? `${raw.title} — ERD Studio` : 'ERD Studio';
     document.getElementById('vtitle-sub').textContent=raw.title?`— ${raw.title}`:'';
     buildPills(); renderERD(); setTimeout(fitView,60);
     const meta=[];
@@ -433,7 +447,10 @@ function renderERD(){
   const svg=document.getElementById('erd-svg');svg.innerHTML='';
   if(!data||!domain)return;
   const d=data.domains[domain];if(!d)return;
-  const layout=d.layout||{},tables=d.tables||[],edges=d.edges||[],color=d.color||'#6366f1';
+  const layout=d.layout||{},tables=d.tables||[],edges=d.edges||[];
+  const color = d.color || getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  const cardBg = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim();
+  const inactiveLine = 'rgba(128,128,150,0.2)';
   const defs=S('defs');
   const mkr=S('marker',{id:'arr',viewBox:'0 0 10 10',refX:8,refY:5,markerWidth:6,markerHeight:6,orient:'auto-start-reverse'});
   mkr.appendChild(S('path',{d:'M2 1L8 5L2 9',fill:'none',stroke:color,'stroke-width':1.6,'stroke-linecap':'round','stroke-linejoin':'round'}));
@@ -459,7 +476,7 @@ function renderERD(){
 
     // Visible line — starts dimmed, brightens on hover
     const linePath=S('path',{d:pd,fill:'none',
-      stroke: active ? color : 'rgba(128,128,150,0.22)',
+      stroke: active ? color : inactiveLine,
       'stroke-width': active ? 2 : 1,
       'stroke-dasharray': active ? 'none' : '5 4',
       'stroke-linecap':'round','marker-end':'url(#arr)'});
@@ -493,12 +510,12 @@ function renderERD(){
     const labelG = S('g',{display:'none'});
 
     labelG.appendChild(S('rect',{x:cx-3,y:cy-3,width:cardW_+6,height:cardH_+6,rx:10,fill:color,opacity:.14}));
-    labelG.appendChild(S('rect',{x:cx,y:cy,width:cardW_,height:cardH_,rx:7,fill:'#12121a',stroke:color,'stroke-width':1.2}));
+    labelG.appendChild(S('rect',{x:cx,y:cy,width:cardW_,height:cardH_,rx:7,fill:cardBg,stroke:color,'stroke-width':1.2}));
 
     const mkSpan=(txt,bold,muted)=>{
       const sp=document.createElementNS(NS,'tspan');
       sp.textContent=txt;
-      sp.setAttribute('fill', muted ? color : '#ffffff');
+      sp.setAttribute('fill', muted ? color : 'var(--text)');
       if(muted)  sp.setAttribute('opacity','0.55');
       if(bold)   sp.setAttribute('font-weight','700');
       return sp;
@@ -539,7 +556,7 @@ function renderERD(){
       labelG.setAttribute('display','none');
       glowPath.setAttribute('display','none');
       if(!active){
-        linePath.setAttribute('stroke','rgba(128,128,150,0.22)');
+        linePath.setAttribute('stroke',inactiveLine);
         linePath.setAttribute('stroke-width','1');
         linePath.setAttribute('stroke-dasharray','5 4');
       }
@@ -563,7 +580,7 @@ function renderERD(){
     g.appendChild(S('rect',{x,y,width:tw,height:TH_HEAD,rx:9,fill:color+(isSel?'ff':'cc')}));
     g.appendChild(S('rect',{x,y:y+TH_HEAD-8,width:tw,height:8,fill:color+(isSel?'ff':'cc')}));
     const maxHC=Math.floor((tw-PAD*2-64)/CH_N);
-    const nt=S('text',{x:x+PAD,y:y+TH_HEAD/2+1,'dominant-baseline':'central',fill:'#fff',fontSize:10.5,fontWeight:700,fontFamily:'monospace'});
+    const nt=S('text',{x:x+PAD,y:y+TH_HEAD/2+1,'dominant-baseline':'central',fill:'var(--text)',fontSize:10.5,fontWeight:700,fontFamily:'monospace'});
     nt.textContent=table.name.length>maxHC?table.name.slice(0,maxHC-1)+'…':table.name;g.appendChild(nt);
     const cl=`${total} col${total!==1?'s':''}`,pw=cl.length*5.8+12,px2=x+tw-PAD-pw,py2=y+TH_HEAD/2-8;
     g.appendChild(S('rect',{x:px2,y:py2,width:pw,height:16,rx:8,fill:'rgba(0,0,0,0.28)'}));
@@ -659,12 +676,12 @@ function closeDrawer(){document.getElementById('drawer').classList.remove('open'
 // ══════════════════════════════════════════════
 // MINIMAP
 // ══════════════════════════════════════════════
-function updateMinimap(){const mc=document.getElementById('mm-canvas'),ctx=mc.getContext('2d');const W=150,H=90;ctx.clearRect(0,0,W,H);if(!data||!domain)return;const d=data.domains[domain],layout=d.layout||{},tables=d.tables||[];let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;tables.forEach(t=>{const p=layout[t.id];if(!p)return;minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]+TW(t));maxY=Math.max(maxY,p[1]+TH(t));});const fw=maxX-minX||1,fh=maxY-minY||1,sc=Math.min((W-8)/fw,(H-8)/fh);const ox=(W-fw*sc)/2-minX*sc,oy=(H-fh*sc)/2-minY*sc;const col=data.domains[domain].color||'#6366f1';tables.forEach(t=>{const p=layout[t.id];if(!p)return;ctx.fillStyle=col+'33';ctx.strokeStyle=t.id===selectedTable?col:col+'55';ctx.lineWidth=t.id===selectedTable?1.5:0.5;ctx.beginPath();ctx.roundRect(p[0]*sc+ox,p[1]*sc+oy,TW(t)*sc,TH(t)*sc,2);ctx.fill();ctx.stroke();});const cw=canvas.clientWidth,ch=canvas.clientHeight,vp=document.getElementById('mm-vp');vp.style.left=Math.max(0,(-panX/scale)*sc+ox)+'px';vp.style.top=Math.max(0,(-panY/scale)*sc+oy)+'px';vp.style.width=Math.min(W,(cw/scale)*sc)+'px';vp.style.height=Math.min(H,(ch/scale)*sc)+'px';}
+function updateMinimap(){const mc=document.getElementById('mm-canvas'),ctx=mc.getContext('2d');const W=150,H=90;ctx.clearRect(0,0,W,H);if(!data||!domain)return;const d=data.domains[domain],layout=d.layout||{},tables=d.tables||[];let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;tables.forEach(t=>{const p=layout[t.id];if(!p)return;minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]+TW(t));maxY=Math.max(maxY,p[1]+TH(t));});const fw=maxX-minX||1,fh=maxY-minY||1,sc=Math.min((W-8)/fw,(H-8)/fh);const ox=(W-fw*sc)/2-minX*sc,oy=(H-fh*sc)/2-minY*sc;const col=d.color||getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();tables.forEach(t=>{const p=layout[t.id];if(!p)return;ctx.fillStyle=col+'33';ctx.strokeStyle=t.id===selectedTable?col:col+'55';ctx.lineWidth=t.id===selectedTable?1.5:0.5;ctx.beginPath();ctx.roundRect(p[0]*sc+ox,p[1]*sc+oy,TW(t)*sc,TH(t)*sc,2);ctx.fill();ctx.stroke();});const cw=canvas.clientWidth,ch=canvas.clientHeight,vp=document.getElementById('mm-vp');vp.style.left=Math.max(0,(-panX/scale)*sc+ox)+'px';vp.style.top=Math.max(0,(-panY/scale)*sc+oy)+'px';vp.style.width=Math.min(W,(cw/scale)*sc)+'px';vp.style.height=Math.min(H,(ch/scale)*sc)+'px';}
 
 // ══════════════════════════════════════════════
 // EXPORT SVG
 // ══════════════════════════════════════════════
-function exportSVG(){if(!data||!domain){toast('No diagram loaded','#ef4444');return;}const svgEl=document.getElementById('erd-svg');const d=data.domains[domain],layout=d.layout||{},tables=d.tables||[];let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;tables.forEach(t=>{const p=layout[t.id];if(!p)return;minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]+TW(t));maxY=Math.max(maxY,p[1]+TH(t));});const pad=40,clone=svgEl.cloneNode(true);clone.setAttribute('viewBox',`${minX-pad} ${minY-pad} ${maxX-minX+pad*2} ${maxY-minY+pad*2}`);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.style='background:#0f0f11';const blob=new Blob([clone.outerHTML],{type:'image/svg+xml'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`erd_${domain}.svg`;a.click();toast('✓ SVG exported');}
+function exportSVG(){if(!data||!domain){toast('No diagram loaded','#ef4444');return;}const svgEl=document.getElementById('erd-svg');const d=data.domains[domain],layout=d.layout||{},tables=d.tables||[];let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;tables.forEach(t=>{const p=layout[t.id];if(!p)return;minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]+TW(t));maxY=Math.max(maxY,p[1]+TH(t));});const pad=40,clone=svgEl.cloneNode(true);clone.setAttribute('viewBox',`${minX-pad} ${minY-pad} ${maxX-minX+pad*2} ${maxY-minY+pad*2}`);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');const bgColor=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();clone.style=`background:${bgColor}`;const blob=new Blob([clone.outerHTML],{type:'image/svg+xml'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`erd_${data.title?data.title.replace(/\s+/g,'_'):domain}.svg`;a.click();toast('✓ SVG exported');}
 
 // ══════════════════════════════════════════════
 // TOAST
