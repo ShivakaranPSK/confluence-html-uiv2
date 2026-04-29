@@ -62,8 +62,8 @@
       "color": "#6366f1",
       "tables": [
         {
-          "id": "customer",
-          "name": "CUSTOMER",
+          "id": "customers",
+          "name": "CUSTOMERs",
           "note": "Core customer record",
           "fields": [
             { "n": "ID",                   "t": "pk", "dt": "varchar",  "pi": false, "masked": false, "note": "Primary key — UUID" },
@@ -80,8 +80,8 @@
           ]
         },
         {
-          "id": "order",
-          "name": "ORDER",
+          "id": "orders",
+          "name": "ORDERs",
           "note": "Individual customer order",
           "fields": [
             { "n": "ID",               "t": "pk", "dt": "varchar",  "pi": false, "masked": false, "note": "Primary key — UUID" },
@@ -99,8 +99,8 @@
       ],
       "edges": [
         {
-          "from": "customer",
-          "to": "order",
+          "from": "customers",
+          "to": "orders",
           "fromCol": "ID",
           "toCol": "CUSTOMER_ID",
           "cardinality": "1:N"
