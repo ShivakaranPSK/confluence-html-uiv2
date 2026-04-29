@@ -1,297 +1,375 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ERD Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0f0f11;--panel:#18181b;--surface:#1e1e22;--s2:#26262b;--s3:#2e2e34;
-  --b1:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.12);--b3:rgba(255,255,255,0.22);
-  --text:#e8e8ec;--t2:#9090a0;--t3:#55555f;
-  --accent:#6366f1;--ah:#818cf8;--abg:rgba(99,102,241,0.12);
-  --pk-bg:rgba(124,58,237,0.15);--pk-t:#c4b5fd;
-  --fk-bg:rgba(5,150,105,0.15);--fk-t:#6ee7b7;
-  --pi-bg:rgba(220,38,38,0.12);--pi-t:#fca5a5;
-  --mx-bg:rgba(217,119,6,0.12);--mx-t:#fcd34d;
-  --ok:#22c55e;--err:#ef4444;--warn:#f59e0b;
-  --mono:'SF Mono','Fira Code','Cascadia Code',monospace;
-  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  --sh:0 4px 24px rgba(0,0,0,0.5);
+/* ════════════════════════════════════
+   DESIGN TOKENS
+════════════════════════════════════ */
+:root {
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --ease: cubic-bezier(0.4,0,0.2,1);
+  --t: all 0.18s var(--ease);
 }
-html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hidden}
-button{font-family:var(--sans);cursor:pointer;transition:all .15s}
+[data-theme="dark"] {
+  --bg:#0d0d10; --bg2:#111115; --panel:#17171c; --surface:#1d1d23;
+  --s2:#242430; --s3:#2c2c3a; --s4:#353545;
+  --b1:rgba(255,255,255,0.045); --b2:rgba(255,255,255,0.08);
+  --b3:rgba(255,255,255,0.14);  --b4:rgba(255,255,255,0.24);
+  --text:#ededf2; --t2:#9494a8; --t3:#57576e; --t4:#36364a;
+  --sh: 0 1px 2px rgba(0,0,0,0.4),0 8px 24px rgba(0,0,0,0.5);
+  --sh-lg: 0 4px 8px rgba(0,0,0,0.3),0 24px 56px rgba(0,0,0,0.6);
+  --canvas-dot: rgba(255,255,255,0.038);
+  --tshadow: rgba(0,0,0,0.55);
+}
+[data-theme="light"] {
+  --bg:#f2f2f6; --bg2:#e8e8ef; --panel:#ffffff; --surface:#fafafa;
+  --s2:#f0f0f6; --s3:#e6e6ee; --s4:#d8d8e4;
+  --b1:rgba(0,0,0,0.04); --b2:rgba(0,0,0,0.08);
+  --b3:rgba(0,0,0,0.13);  --b4:rgba(0,0,0,0.21);
+  --text:#111118; --t2:#5c5c74; --t3:#9494a8; --t4:#c0c0d0;
+  --sh: 0 1px 2px rgba(0,0,0,0.05),0 4px 14px rgba(0,0,0,0.08);
+  --sh-lg: 0 4px 8px rgba(0,0,0,0.04),0 16px 48px rgba(0,0,0,0.10);
+  --canvas-dot: rgba(0,0,0,0.055);
+  --tshadow: rgba(0,0,0,0.10);
+}
+:root {
+  --accent:#6366f1; --accent-h:#818cf8; --accent-bg:rgba(99,102,241,0.10); --accent-ring:rgba(99,102,241,0.35);
+  --pk:#7c3aed; --pk-bg:rgba(124,58,237,0.11); --pk-t:#c4b5fd;
+  --fk:#0d9488; --fk-bg:rgba(13,148,136,0.11); --fk-t:#5eead4;
+  --pi:#dc2626; --pi-bg:rgba(220,38,38,0.10);  --pi-t:#fca5a5;
+  --mx:#d97706; --mx-bg:rgba(217,119,6,0.10);  --mx-t:#fcd34d;
+  --ok:#22c55e; --err:#ef4444; --warn:#f59e0b;
+}
+
+/* ════════════════════════════════════
+   RESET
+════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font-family:var(--font);cursor:pointer}
 #app{display:flex;flex-direction:column;height:100vh}
 
-/* ── STATUS BAR ── */
-#statusbar{
-  display:flex;align-items:center;gap:10px;padding:0 16px;height:36px;
-  background:var(--s2);border-bottom:1px solid var(--b2);flex-shrink:0;font-size:11px;
+/* smooth theme transitions — only colour properties */
+body,#toolbar,#statusbar,#legend,#guide,#drawer,#tip,#minimap,#toast,
+.gcard,.dfield,.rel-chip,.sc,.rtable th,.rtable td,.dpill,.tbtn,.sb-btn,.zb{
+  transition:background-color .2s var(--ease),border-color .2s var(--ease),color .2s var(--ease),box-shadow .2s var(--ease);
 }
-#sb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--warn)}
+
+/* ════════════════════════════════════
+   STATUS BAR
+════════════════════════════════════ */
+#statusbar{
+  display:flex;align-items:center;gap:10px;padding:0 16px;height:33px;
+  background:var(--bg2);border-bottom:1px solid var(--b2);
+  flex-shrink:0;font-size:11px;letter-spacing:.01em;
+}
+#sb-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--warn)}
 #sb-dot.ok{background:var(--ok)}
 #sb-dot.err{background:var(--err)}
-#sb-dot.loading{background:var(--warn);animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+#sb-dot.loading{background:var(--warn);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
 #sb-msg{flex:1;color:var(--t2)}
-#sb-meta{color:var(--t3);font-size:10px}
-.sb-btn{padding:3px 10px;border-radius:5px;font-size:10px;font-weight:600;background:var(--surface);border:1px solid var(--b2);color:var(--t2)}
-.sb-btn:hover{background:var(--s3);color:var(--text)}
+#sb-meta{color:var(--t3);font-size:10.5px}
+.sb-btn{
+  padding:3px 10px;border-radius:5px;font-size:10.5px;font-weight:500;
+  background:var(--surface);border:1px solid var(--b3);color:var(--t2);
+}
+.sb-btn:hover{background:var(--s3);color:var(--text);border-color:var(--b4)}
 
-/* ── TOOLBAR ── */
+/* ════════════════════════════════════
+   TOOLBAR
+════════════════════════════════════ */
 #toolbar{
-  display:flex;align-items:center;gap:8px;padding:7px 14px;
+  display:flex;align-items:center;gap:8px;padding:8px 16px;
   background:var(--panel);border-bottom:1px solid var(--b2);flex-shrink:0;flex-wrap:wrap;
 }
-#vtitle{font-size:13px;font-weight:700;letter-spacing:-0.2px}
-#vtitle em{font-style:normal;color:var(--t2);font-weight:400;font-size:11px}
-.tsep{width:1px;height:18px;background:var(--b2);flex-shrink:0}
-.dpills{display:flex;gap:5px;flex-wrap:wrap;flex:1}
-.dpill{padding:3px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid transparent;background:transparent;transition:all .15s}
-.zoom-row{display:flex;align-items:center;gap:2px;background:var(--s2);border:1px solid var(--b2);border-radius:6px;padding:2px}
-.zb{padding:3px 8px;border-radius:4px;background:none;border:none;color:var(--t2);font-size:13px;font-weight:700;cursor:pointer}
+#vtitle{
+  display:flex;align-items:center;gap:7px;
+  font-size:13.5px;font-weight:700;letter-spacing:-.3px;color:var(--text);
+}
+#vtitle svg{opacity:.6;flex-shrink:0}
+#vtitle em{font-style:normal;color:var(--t3);font-weight:400;font-size:12px}
+.tsep{width:1px;height:18px;background:var(--b3);flex-shrink:0}
+.dpills{display:flex;gap:5px;flex-wrap:wrap;flex:1;min-width:0}
+.dpill{
+  padding:4px 14px;border-radius:20px;font-size:11px;font-weight:600;
+  cursor:pointer;border:1.5px solid var(--b3);background:transparent;color:var(--t2);
+  letter-spacing:.01em;
+}
+.dpill:hover{background:var(--s2);color:var(--text)}
+.zoom-row{
+  display:flex;align-items:center;gap:1px;
+  background:var(--s2);border:1px solid var(--b3);border-radius:7px;padding:2px;
+}
+.zb{
+  padding:4px 9px;border-radius:5px;background:none;border:none;
+  color:var(--t2);font-size:14px;font-weight:400;line-height:1;cursor:pointer;
+}
 .zb:hover{background:var(--s3);color:var(--text)}
-#zlabel{font-size:11px;color:var(--t2);min-width:34px;text-align:center}
-.tbtn{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;background:var(--s2);color:var(--t2);border:1px solid var(--b2)}
-.tbtn:hover{background:var(--s3);color:var(--text)}
+#zlabel{font-size:11px;font-weight:500;color:var(--t2);min-width:38px;text-align:center;font-variant-numeric:tabular-nums}
+.tbtn{
+  display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;
+  font-size:11.5px;font-weight:500;background:var(--s2);color:var(--t2);
+  border:1px solid var(--b3);letter-spacing:.01em;
+}
+.tbtn:hover{background:var(--s3);color:var(--text);border-color:var(--b4)}
+#theme-btn{
+  width:31px;height:31px;border-radius:7px;border:1px solid var(--b3);
+  background:var(--s2);color:var(--t2);font-size:14px;display:flex;
+  align-items:center;justify-content:center;padding:0;
+}
+#theme-btn:hover{background:var(--s3);color:var(--text);border-color:var(--b4)}
 
-/* ── CANVAS ── */
+/* ════════════════════════════════════
+   CANVAS
+════════════════════════════════════ */
 #canvas{
   flex:1;overflow:hidden;position:relative;cursor:grab;user-select:none;
   background:var(--bg);
-  background-image:radial-gradient(circle,rgba(255,255,255,0.035) 1px,transparent 1px);
+  background-image:radial-gradient(circle,var(--canvas-dot) 1px,transparent 1px);
   background-size:24px 24px;
 }
 #canvas.grabbing{cursor:grabbing}
 #erd-svg{position:absolute;top:0;left:0;overflow:visible}
 
-/* ── EMPTY STATE ── */
-#empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;pointer-events:none}
+/* ════════════════════════════════════
+   EMPTY STATE
+════════════════════════════════════ */
+#empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;pointer-events:none}
 #empty.hidden{display:none}
-.ei{width:52px;height:52px;background:var(--s2);border:1px solid var(--b2);border-radius:12px;display:flex;align-items:center;justify-content:center;opacity:0.5}
-.et{font-size:16px;font-weight:700;color:var(--t2)}
-.es{font-size:13px;color:var(--t3);text-align:center;max-width:320px;line-height:1.6}
+.ei{width:58px;height:58px;background:var(--s2);border:1px solid var(--b3);border-radius:14px;display:flex;align-items:center;justify-content:center;opacity:.45}
+.et{font-size:17px;font-weight:600;color:var(--t2);letter-spacing:-.3px}
+.es{font-size:13px;color:var(--t3);text-align:center;max-width:300px;line-height:1.65}
 
-/* ── GUIDE PANEL (collapsible) ── */
-#guide{
-  background:var(--panel);border-bottom:1px solid var(--b2);
-  overflow:hidden;max-height:0;transition:max-height .3s ease;flex-shrink:0;
-}
-#guide.open{max-height:600px}
+/* ════════════════════════════════════
+   GUIDE
+════════════════════════════════════ */
+#guide{background:var(--panel);border-bottom:1px solid var(--b2);overflow:hidden;max-height:0;transition:max-height .35s var(--ease);flex-shrink:0}
+#guide.open{max-height:620px}
 #guide-inner{padding:16px 20px 20px}
-.gtabs{display:flex;gap:0;border-bottom:1px solid var(--b2);margin-bottom:14px}
-.gtab{padding:7px 16px;font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;background:none;border-radius:0;border:none;border-bottom:2px solid transparent}
-.gtab.on{color:var(--ah);border-bottom-color:var(--accent)}
-.gtab:hover:not(.on){color:var(--text)}
+.gtabs{display:flex;border-bottom:1px solid var(--b2);margin-bottom:16px}
+.gtab{padding:8px 16px;font-size:11.5px;font-weight:500;color:var(--t3);cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;border-radius:0;transition:color .15s,border-color .15s}
+.gtab.on{color:var(--accent-h);border-bottom-color:var(--accent)}
+.gtab:hover:not(.on){color:var(--t2)}
 .gpanel{display:none}.gpanel.on{display:block}
 .gcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-.gcard{background:var(--surface);border:1px solid var(--b2);border-radius:8px;padding:12px}
-.gcard h4{font-size:11px;font-weight:700;margin-bottom:5px}
-.gcard p{font-size:11px;color:var(--t2);line-height:1.6}
-.rtable{width:100%;border-collapse:collapse;font-size:11px}
-.rtable th{background:var(--s2);padding:6px 10px;text-align:left;font-weight:600;color:var(--t2);border:1px solid var(--b2);font-size:10px;text-transform:uppercase;letter-spacing:0.4px}
-.rtable td{padding:6px 10px;border:1px solid var(--b1);color:var(--t2);line-height:1.5}
-.rtable td:first-child{font-family:var(--mono);font-size:10px;color:var(--ah);font-weight:600}
+.gcard{background:var(--surface);border:1px solid var(--b2);border-radius:10px;padding:14px}
+.gcard h4{font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text)}
+.gcard p{font-size:11.5px;color:var(--t2);line-height:1.65}
+.rtable{width:100%;border-collapse:collapse;font-size:11.5px}
+.rtable th{background:var(--s2);padding:7px 10px;text-align:left;font-weight:600;color:var(--t2);border:1px solid var(--b2);font-size:10px;text-transform:uppercase;letter-spacing:.6px}
+.rtable td{padding:7px 10px;border:1px solid var(--b1);color:var(--t2);line-height:1.5}
+.rtable td:first-child{font-family:var(--mono);font-size:10.5px;color:var(--accent-h);font-weight:600}
 .rtable td:nth-child(2){color:var(--t3);font-family:var(--mono);font-size:10px}
-code{background:var(--s2);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:10px;color:var(--ah)}
+code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mono);font-size:10.5px;color:var(--accent-h)}
 .scgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.sc{display:flex;align-items:center;gap:8px;padding:6px 9px;background:var(--surface);border-radius:5px;font-size:11px}
-.sc kbd{background:var(--s2);border:1px solid var(--b3);border-radius:4px;padding:2px 6px;font-family:var(--mono);font-size:10px;color:var(--text)}
+.sc{display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--surface);border-radius:7px;font-size:11.5px;border:1px solid var(--b2)}
+.sc kbd{background:var(--s3);border:1px solid var(--b4);border-bottom-width:2px;border-radius:5px;padding:2px 7px;font-family:var(--mono);font-size:10px;color:var(--text)}
 .sc span{color:var(--t2)}
-.bd{font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px}
+.bd{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:4px}
 
-/* ── LEGEND ── */
-#legend{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:6px 14px;background:var(--panel);border-top:1px solid var(--b2);font-size:10.5px;flex-shrink:0}
-.leg{display:flex;align-items:center;gap:5px;color:var(--t2)}
-.lsw{width:20px;height:8px;border-radius:2px}
-#leg-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.5px}
+/* ════════════════════════════════════
+   LEGEND
+════════════════════════════════════ */
+#legend{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding:7px 16px;background:var(--panel);border-top:1px solid var(--b2);font-size:11px;flex-shrink:0;letter-spacing:.01em}
+.leg{display:flex;align-items:center;gap:6px;color:var(--t2)}
+.lsw{width:20px;height:8px;border-radius:3px}
+#leg-lbl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.7px}
 
-/* ── DRAWER ── */
-#drawer{position:absolute;right:0;top:0;bottom:0;width:272px;background:var(--panel);border-left:1px solid var(--b2);z-index:20;transform:translateX(100%);transition:transform .22s ease;display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,0.4)}
+/* ════════════════════════════════════
+   DRAWER
+════════════════════════════════════ */
+#drawer{position:absolute;right:0;top:0;bottom:0;width:282px;background:var(--panel);border-left:1px solid var(--b2);z-index:20;transform:translateX(100%);transition:transform .25s var(--ease);display:flex;flex-direction:column;box-shadow:var(--sh-lg)}
 #drawer.open{transform:translateX(0)}
-#drw-hdr{padding:14px 16px;border-bottom:1px solid var(--b1);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-shrink:0}
-#drw-name{font-size:13px;font-weight:700;word-break:break-all;line-height:1.3}
-#drw-sub{font-size:10px;color:var(--t2);margin-top:2px}
-#drw-close{background:none;border:none;color:var(--t2);font-size:20px;line-height:1;padding:0;cursor:pointer;flex-shrink:0}
-#drw-close:hover{color:var(--text)}
-#drw-body{overflow-y:auto;flex:1;padding:12px}
-.dsec{margin-bottom:14px}
-.dsec-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--t2);margin-bottom:7px}
-.dfield{display:flex;align-items:center;gap:5px;padding:5px 8px;background:var(--surface);border-radius:5px;margin-bottom:3px;font-family:var(--mono);font-size:10.5px}
-.dfn{flex:1;color:var(--text)}.dft{color:var(--t3);font-size:9.5px}
-.rel-chip{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--s2);border-radius:6px;margin-bottom:4px;cursor:pointer;font-size:11px;border:1px solid transparent;transition:all .15s}
-.rel-chip:hover{border-color:var(--accent);background:var(--abg)}
-.rel-dir{font-weight:700;color:var(--ah)}.rel-tn{flex:1;font-family:var(--mono)}.rel-via{color:var(--t3);font-size:10px}
-.tag{font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px}
-.t-pk{background:var(--pk-bg);color:var(--pk-t)}.t-fk{background:var(--fk-bg);color:var(--fk-t)}
-.t-pi{background:var(--pi-bg);color:var(--pi-t)}.t-m{background:var(--mx-bg);color:var(--mx-t)}
+#drw-hdr{padding:15px 16px;border-bottom:1px solid var(--b2);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-shrink:0}
+#drw-name{font-size:14px;font-weight:700;word-break:break-all;line-height:1.3;letter-spacing:-.2px}
+#drw-sub{font-size:11px;color:var(--t2);margin-top:3px}
+#drw-close{background:var(--s2);border:1px solid var(--b3);color:var(--t2);font-size:13px;padding:4px 8px;cursor:pointer;border-radius:5px;flex-shrink:0}
+#drw-close:hover{color:var(--text);background:var(--s3)}
+#drw-body{overflow-y:auto;flex:1;padding:14px}
+.dsec{margin-bottom:16px}
+.dsec-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:8px}
+.dfield{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--surface);border:1px solid var(--b2);border-radius:7px;margin-bottom:3px;font-family:var(--mono);font-size:11px}
+.dfield:hover{border-color:var(--b4)}
+.dfn{flex:1;color:var(--text);font-weight:500}
+.dft{color:var(--t3);font-size:10px}
+.rel-chip{display:flex;align-items:center;gap:7px;padding:8px 11px;background:var(--s2);border-radius:8px;margin-bottom:4px;cursor:pointer;font-size:11.5px;border:1px solid var(--b2)}
+.rel-chip:hover{border-color:var(--accent-ring);background:var(--accent-bg)}
+.rel-dir{font-weight:700;color:var(--accent-h)}
+.rel-tn{flex:1;font-family:var(--mono);font-weight:500;color:var(--text)}
+.rel-via{color:var(--t3);font-size:10.5px}
+.tag{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.3px}
+.t-pk{background:var(--pk-bg);color:var(--pk-t)}
+.t-fk{background:var(--fk-bg);color:var(--fk-t)}
+.t-pi{background:var(--pi-bg);color:var(--pi-t)}
+.t-m{background:var(--mx-bg);color:var(--mx-t)}
 
-/* ── TOOLTIP ── */
-#tip{position:fixed;background:var(--panel);border:1px solid var(--b2);border-radius:8px;padding:8px 12px;font-size:11px;box-shadow:var(--sh);z-index:99;pointer-events:none;display:none;max-width:220px}
+/* ════════════════════════════════════
+   TOOLTIP
+════════════════════════════════════ */
+#tip{position:fixed;background:var(--panel);border:1px solid var(--b3);border-radius:10px;padding:10px 13px;font-size:11.5px;box-shadow:var(--sh-lg);z-index:99;pointer-events:none;display:none;max-width:230px}
 #tip.on{display:block}
-#tip-name{font-weight:700;margin-bottom:2px;font-size:12px}
+#tip-name{font-weight:700;margin-bottom:3px;font-size:12.5px;letter-spacing:-.1px}
 
-/* ── MINIMAP ── */
-#minimap{position:absolute;bottom:12px;left:12px;width:150px;height:90px;background:var(--panel);border:1px solid var(--b2);border-radius:6px;overflow:hidden;z-index:10;box-shadow:var(--sh)}
+/* ════════════════════════════════════
+   MINIMAP
+════════════════════════════════════ */
+#minimap{position:absolute;bottom:14px;left:14px;width:160px;height:96px;background:var(--panel);border:1px solid var(--b3);border-radius:10px;overflow:hidden;z-index:10;box-shadow:var(--sh)}
 #mm-canvas{width:100%;height:100%}
-#mm-vp{position:absolute;border:1.5px solid var(--accent);border-radius:2px;pointer-events:none;opacity:0.7}
+#mm-vp{position:absolute;border:1.5px solid var(--accent);border-radius:2px;pointer-events:none;opacity:.75}
 
-/* ── TOAST ── */
-#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:8px 18px;font-size:12px;font-weight:600;color:var(--text);box-shadow:var(--sh);z-index:999;transition:transform .25s ease;pointer-events:none}
+/* ════════════════════════════════════
+   TOAST
+════════════════════════════════════ */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--s3);border:1px solid var(--b4);border-radius:10px;padding:9px 20px;font-size:12px;font-weight:500;color:var(--text);box-shadow:var(--sh-lg);z-index:999;transition:transform .28s var(--ease);pointer-events:none;letter-spacing:.01em}
 #toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ════════════════════════════════════
+   SCROLLBARS
+════════════════════════════════════ */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--b4)}
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- STATUS BAR: shows schema load state -->
-  <div id="statusbar">
-    <div id="sb-dot" class="loading"></div>
-    <span id="sb-msg">Loading schema.json…</span>
-    <span id="sb-meta"></span>
-    <button class="sb-btn" onclick="reloadSchema()" title="Re-fetch schema.json from the server">↺ Reload</button>
-    <button class="sb-btn" onclick="toggleGuide()" id="guide-btn">📖 Guide</button>
-  </div>
+<!-- STATUS BAR -->
+<div id="statusbar">
+  <div id="sb-dot" class="loading"></div>
+  <span id="sb-msg">Loading schema.json…</span>
+  <span id="sb-meta"></span>
+  <button class="sb-btn" onclick="reloadSchema()">↺ Reload</button>
+  <button class="sb-btn" onclick="toggleGuide()" id="guide-btn">📖 Guide</button>
+</div>
 
-  <!-- COLLAPSIBLE GUIDE -->
-  <div id="guide">
-    <div id="guide-inner">
-      <div class="gtabs">
-        <button class="gtab on" onclick="gTab('overview',this)">Overview</button>
-        <button class="gtab" onclick="gTab('schema',this)">JSON Schema</button>
-        <button class="gtab" onclick="gTab('tags',this)">Field Tags</button>
-        <button class="gtab" onclick="gTab('shortcuts',this)">Shortcuts</button>
+<!-- GUIDE -->
+<div id="guide">
+  <div id="guide-inner">
+    <div class="gtabs">
+      <button class="gtab on" onclick="gTab('overview',this)">Overview</button>
+      <button class="gtab" onclick="gTab('schema',this)">JSON Schema</button>
+      <button class="gtab" onclick="gTab('tags',this)">Field Tags</button>
+      <button class="gtab" onclick="gTab('shortcuts',this)">Shortcuts</button>
+    </div>
+    <div class="gpanel on" id="gtab-overview">
+      <div class="gcards">
+        <div class="gcard"><h4>🔄 Auto-refresh</h4><p>Loads <code>schema.json</code> automatically on every page open. Commit a new file — all visitors see the updated diagram on next refresh.</p></div>
+        <div class="gcard"><h4>🖱 Navigate</h4><p>Drag canvas to pan. Scroll to zoom. Drag table cards to reposition them live.</p></div>
+        <div class="gcard"><h4>🔍 Inspect</h4><p>Click a table to open the detail panel — all columns, types, relationships. Click a relation to jump to its table.</p></div>
+        <div class="gcard"><h4>📦 Large tables</h4><p>Tables with more than 4 columns collapse automatically. Click <strong>▾ Show N more</strong> to expand inline.</p></div>
+        <div class="gcard"><h4>🔒 PI / Masked</h4><p>Columns with <code>pi:true</code> or <code>masked:true</code> are colour-coded for data governance visibility.</p></div>
+        <div class="gcard"><h4>☾ Dark / Light</h4><p>Click the theme button in the toolbar to switch between dark and light mode.</p></div>
       </div>
-
-      <div class="gpanel on" id="gtab-overview">
-        <div class="gcards">
-          <div class="gcard"><h4>🔄 Auto-refresh</h4><p>The diagram loads <code>schema.json</code> from this repo automatically. Commit a new <code>schema.json</code> — anyone refreshing the page sees the updated diagram.</p></div>
-          <div class="gcard"><h4>🖱 Navigate</h4><p>Drag the canvas to pan. Scroll to zoom. Drag table cards to reposition them — layout updates live.</p></div>
-          <div class="gcard"><h4>🔍 Inspect</h4><p>Click any table to open a detail drawer with all columns, types, and relationships. Click a relationship to jump to the related table.</p></div>
-          <div class="gcard"><h4>📦 Large tables</h4><p>Tables with more than 4 columns collapse automatically. Click <strong>▾ Show N more</strong> to expand. PK and FK columns always stay visible.</p></div>
-          <div class="gcard"><h4>🔒 PI / Masked</h4><p>Columns marked <code>pi:true</code> or <code>masked:true</code> are highlighted with colour-coded badges for privacy and data governance visibility.</p></div>
-          <div class="gcard"><h4>↓ Export SVG</h4><p>Download the current domain view as a vector SVG for documentation, presentations, or Confluence attachments.</p></div>
-        </div>
-      </div>
-
-      <div class="gpanel" id="gtab-schema">
-        <p style="font-size:11px;color:var(--t2);margin-bottom:12px">Edit <strong>schema.json</strong> in the repo root. The viewer fetches it on every load. Full structure:</p>
-        <pre style="background:var(--bg);border:1px solid var(--b2);border-radius:6px;padding:12px;font-size:10.5px;font-family:var(--mono);color:var(--t2);overflow-x:auto;line-height:1.7">{
-  <span style="color:var(--ah)">"title"</span>: <span style="color:var(--fk-t)">"My Schema"</span>,
-  <span style="color:var(--ah)">"updatedAt"</span>: <span style="color:var(--fk-t)">"2026-04-28"</span>,          <span style="color:var(--t3)">// shown in status bar</span>
-  <span style="color:var(--ah)">"updatedBy"</span>: <span style="color:var(--fk-t)">"data-pipeline"</span>,      <span style="color:var(--t3)">// shown in status bar</span>
-  <span style="color:var(--ah)">"domains"</span>: {
-    <span style="color:var(--ah)">"key"</span>: {
-      <span style="color:var(--ah)">"label"</span>: <span style="color:var(--fk-t)">"Tab label"</span>,
-      <span style="color:var(--ah)">"color"</span>: <span style="color:var(--fk-t)">"#6366f1"</span>,
-      <span style="color:var(--ah)">"tables"</span>: [
-        {
-          <span style="color:var(--ah)">"id"</span>: <span style="color:var(--fk-t)">"table_id"</span>,         <span style="color:var(--t3)">// used in edges</span>
-          <span style="color:var(--ah)">"name"</span>: <span style="color:var(--fk-t)">"TABLE_NAME"</span>,
-          <span style="color:var(--ah)">"fields"</span>: [
-            { <span style="color:var(--ah)">"n"</span>:<span style="color:var(--fk-t)">"COL"</span>, <span style="color:var(--ah)">"t"</span>:<span style="color:var(--fk-t)">"pk"</span>, <span style="color:var(--ah)">"dt"</span>:<span style="color:var(--fk-t)">"varchar"</span>, <span style="color:var(--ah)">"pi"</span>:false, <span style="color:var(--ah)">"masked"</span>:false }
-          ]
-        }
-      ],
-      <span style="color:var(--ah)">"edges"</span>: [
-        {
-          <span style="color:var(--ah)">"from"</span>:<span style="color:var(--fk-t)">"a"</span>,
-          <span style="color:var(--ah)">"to"</span>:<span style="color:var(--fk-t)">"b"</span>,
-          <span style="color:var(--ah)">"fromCol"</span>:<span style="color:var(--fk-t)">"ID"</span>,           <span style="color:var(--t3)">// column on the "from" table</span>
-          <span style="color:var(--ah)">"toCol"</span>:<span style="color:var(--fk-t)">"CUSTOMER_ID"</span>,   <span style="color:var(--t3)">// column on the "to" table</span>
-          <span style="color:var(--ah)">"cardinality"</span>:<span style="color:var(--fk-t)">"1:N"</span>
-        }
-      ],
-      <span style="color:var(--ah)">"layout"</span>: { <span style="color:var(--ah)">"table_id"</span>: [<span style="color:var(--mx-t)">60</span>, <span style="color:var(--mx-t)">60</span>] }
+    </div>
+    <div class="gpanel" id="gtab-schema">
+      <p style="font-size:11.5px;color:var(--t2);margin-bottom:12px">Edit <strong>schema.json</strong> in the repo root. Full structure:</p>
+      <pre style="background:var(--bg2);border:1px solid var(--b2);border-radius:10px;padding:14px;font-size:11px;font-family:var(--mono);color:var(--t2);overflow-x:auto;line-height:1.8">{
+  <span style="color:var(--accent-h)">"title"</span>: <span style="color:var(--fk-t)">"My Schema"</span>,
+  <span style="color:var(--accent-h)">"updatedAt"</span>: <span style="color:var(--fk-t)">"2026-04-29"</span>,
+  <span style="color:var(--accent-h)">"updatedBy"</span>: <span style="color:var(--fk-t)">"data-pipeline"</span>,
+  <span style="color:var(--accent-h)">"domains"</span>: {
+    <span style="color:var(--accent-h)">"key"</span>: {
+      <span style="color:var(--accent-h)">"label"</span>: <span style="color:var(--fk-t)">"Tab label"</span>,
+      <span style="color:var(--accent-h)">"color"</span>: <span style="color:var(--fk-t)">"#6366f1"</span>,
+      <span style="color:var(--accent-h)">"tables"</span>: [{ <span style="color:var(--accent-h)">"id"</span>:<span style="color:var(--fk-t)">"t"</span>, <span style="color:var(--accent-h)">"name"</span>:<span style="color:var(--fk-t)">"TABLE"</span>, <span style="color:var(--accent-h)">"fields"</span>:[
+        { <span style="color:var(--accent-h)">"n"</span>:<span style="color:var(--fk-t)">"ID"</span>, <span style="color:var(--accent-h)">"t"</span>:<span style="color:var(--fk-t)">"pk"</span>, <span style="color:var(--accent-h)">"dt"</span>:<span style="color:var(--fk-t)">"varchar"</span>, <span style="color:var(--accent-h)">"pi"</span>:false, <span style="color:var(--accent-h)">"masked"</span>:false }
+      ]}],
+      <span style="color:var(--accent-h)">"edges"</span>: [{ <span style="color:var(--accent-h)">"from"</span>:<span style="color:var(--fk-t)">"a"</span>, <span style="color:var(--accent-h)">"to"</span>:<span style="color:var(--fk-t)">"b"</span>, <span style="color:var(--accent-h)">"fromCol"</span>:<span style="color:var(--fk-t)">"ID"</span>, <span style="color:var(--accent-h)">"toCol"</span>:<span style="color:var(--fk-t)">"FK_ID"</span>, <span style="color:var(--accent-h)">"cardinality"</span>:<span style="color:var(--fk-t)">"1:N"</span> }],
+      <span style="color:var(--accent-h)">"layout"</span>: { <span style="color:var(--accent-h)">"t"</span>: [<span style="color:var(--mx-t)">60</span>, <span style="color:var(--mx-t)">60</span>] }
     }
   }
 }</pre>
-      </div>
-
-      <div class="gpanel" id="gtab-tags">
-        <table class="rtable">
-          <tr><th>Field</th><th>Values</th><th>Description</th><th>Badge</th></tr>
-          <tr><td>"n"</td><td>string</td><td>Column name</td><td>—</td></tr>
-          <tr><td>"t"</td><td>"pk"|"fk"|""</td><td>Key type — primary, foreign, or regular</td><td><span class="bd" style="background:var(--pk-bg);color:var(--pk-t)">PK</span> <span class="bd" style="background:var(--fk-bg);color:var(--fk-t)">FK</span></td></tr>
-          <tr><td>"dt"</td><td>string</td><td>SQL datatype shown below column name</td><td>—</td></tr>
-          <tr><td>"pi"</td><td>true|false</td><td>Personal Information / PII — row highlighted red</td><td><span class="bd" style="background:var(--pi-bg);color:var(--pi-t)">PI</span></td></tr>
-          <tr><td>"masked"</td><td>true|false</td><td>Masked in non-prod environments — row highlighted amber</td><td><span class="bd" style="background:var(--mx-bg);color:var(--mx-t)">M</span></td></tr>
-          <tr><td>"note"</td><td>string</td><td>Description shown in detail panel on click</td><td>—</td></tr>
-        </table>
-      </div>
-
-      <div class="gpanel" id="gtab-shortcuts">
-        <div class="scgrid">
-          <div class="sc"><kbd>Scroll</kbd><span>Zoom in / out</span></div>
-          <div class="sc"><kbd>Drag canvas</kbd><span>Pan around</span></div>
-          <div class="sc"><kbd>Drag table</kbd><span>Reposition</span></div>
-          <div class="sc"><kbd>Click table</kbd><span>Open detail panel</span></div>
-          <div class="sc"><kbd>Hover edge</kbd><span>Show relationship label</span></div>
-          <div class="sc"><kbd>▾ Show more</kbd><span>Expand columns</span></div>
-          <div class="sc"><kbd>Ctrl/⌘ +</kbd><span>Zoom in</span></div>
-          <div class="sc"><kbd>Ctrl/⌘ −</kbd><span>Zoom out</span></div>
-          <div class="sc"><kbd>Ctrl/⌘ 0</kbd><span>Fit to view</span></div>
-          <div class="sc"><kbd>Escape</kbd><span>Close detail panel</span></div>
-        </div>
+    </div>
+    <div class="gpanel" id="gtab-tags">
+      <table class="rtable">
+        <tr><th>Field</th><th>Values</th><th>Description</th><th>Badge</th></tr>
+        <tr><td>"n"</td><td>string</td><td>Column name shown on the table card</td><td>—</td></tr>
+        <tr><td>"t"</td><td>"pk"|"fk"|""</td><td>Key type — primary key, foreign key, or regular</td><td><span class="bd" style="background:var(--pk-bg);color:var(--pk-t)">PK</span> <span class="bd" style="background:var(--fk-bg);color:var(--fk-t)">FK</span></td></tr>
+        <tr><td>"dt"</td><td>string</td><td>SQL datatype shown on line 2 below column name</td><td>—</td></tr>
+        <tr><td>"pi"</td><td>true|false</td><td>Personal Information / PII — row highlighted red</td><td><span class="bd" style="background:var(--pi-bg);color:var(--pi-t)">PI</span></td></tr>
+        <tr><td>"masked"</td><td>true|false</td><td>Masked in non-production environments</td><td><span class="bd" style="background:var(--mx-bg);color:var(--mx-t)">M</span></td></tr>
+        <tr><td>"note"</td><td>string</td><td>Description shown in the detail panel on click</td><td>—</td></tr>
+      </table>
+    </div>
+    <div class="gpanel" id="gtab-shortcuts">
+      <div class="scgrid">
+        <div class="sc"><kbd>Scroll</kbd><span>Zoom in / out</span></div>
+        <div class="sc"><kbd>Drag canvas</kbd><span>Pan around</span></div>
+        <div class="sc"><kbd>Drag table</kbd><span>Reposition</span></div>
+        <div class="sc"><kbd>Click table</kbd><span>Detail panel</span></div>
+        <div class="sc"><kbd>Hover edge</kbd><span>Show join label</span></div>
+        <div class="sc"><kbd>▾ Show more</kbd><span>Expand columns</span></div>
+        <div class="sc"><kbd>Ctrl/⌘ +</kbd><span>Zoom in</span></div>
+        <div class="sc"><kbd>Ctrl/⌘ −</kbd><span>Zoom out</span></div>
+        <div class="sc"><kbd>Ctrl/⌘ 0</kbd><span>Fit to view</span></div>
+        <div class="sc"><kbd>Escape</kbd><span>Close panel</span></div>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- TOOLBAR -->
-  <div id="toolbar">
-    <div id="vtitle">ERD Studio <em id="vtitle-sub"></em></div>
-    <div class="tsep"></div>
-    <div class="dpills" id="dpills"></div>
-    <div class="tsep"></div>
-    <div class="zoom-row">
-      <button class="zb" onclick="zoom(-0.15)">−</button>
-      <span id="zlabel">100%</span>
-      <button class="zb" onclick="zoom(+0.15)">+</button>
-      <button class="zb" onclick="fitView()" title="Fit to view" style="font-size:10px;padding:3px 6px">⊡</button>
-    </div>
-    <button class="tbtn" onclick="autoLayout()">⟲ Auto</button>
-    <button class="tbtn" onclick="exportSVG()">↓ SVG</button>
+<!-- TOOLBAR -->
+<div id="toolbar">
+  <div id="vtitle">
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="1" width="7.5" height="6" rx="1.5"/><rect x="11.5" y="1" width="7.5" height="6" rx="1.5"/><rect x="1" y="13" width="7.5" height="6" rx="1.5"/><rect x="11.5" y="13" width="7.5" height="6" rx="1.5"/><line x1="4.75" y1="7" x2="4.75" y2="10.5" stroke-linecap="round"/><line x1="15.25" y1="7" x2="15.25" y2="10.5" stroke-linecap="round"/><line x1="4.75" y1="10.5" x2="15.25" y2="10.5" stroke-linecap="round"/></svg>
+    ERD Studio <em id="vtitle-sub"></em>
   </div>
-
-  <!-- CANVAS -->
-  <div id="canvas"
-    onmousedown="panStart(event)"
-    onmousemove="panMove(event)"
-    onmouseup="panEnd()"
-    onmouseleave="panEnd()"
-    onwheel="onWheel(event)">
-    <svg id="erd-svg" xmlns="http://www.w3.org/2000/svg"></svg>
-
-    <div id="empty">
-      <div class="ei"><svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 32 32"><rect x="2" y="3" width="11" height="9" rx="2"/><rect x="19" y="3" width="11" height="9" rx="2"/><rect x="2" y="20" width="11" height="9" rx="2"/><rect x="19" y="20" width="11" height="9" rx="2"/><line x1="7.5" y1="12" x2="7.5" y2="16"/><line x1="24.5" y1="12" x2="24.5" y2="16"/><line x1="7.5" y1="16" x2="24.5" y2="16"/></svg></div>
-      <div class="et">Loading diagram…</div>
-      <div class="es">Fetching schema.json from the repository</div>
-    </div>
-
-    <div id="drawer">
-      <div id="drw-hdr">
-        <div><div id="drw-name"></div><div id="drw-sub"></div></div>
-        <button id="drw-close" onclick="closeDrawer()">×</button>
-      </div>
-      <div id="drw-body"></div>
-    </div>
-
-    <div id="minimap">
-      <canvas id="mm-canvas" width="150" height="90"></canvas>
-      <div id="mm-vp"></div>
-    </div>
+  <div class="tsep"></div>
+  <div class="dpills" id="dpills"></div>
+  <div class="tsep"></div>
+  <div class="zoom-row">
+    <button class="zb" onclick="zoom(-0.15)" title="Zoom out">−</button>
+    <span id="zlabel">100%</span>
+    <button class="zb" onclick="zoom(+0.15)" title="Zoom in">+</button>
+    <button class="zb" onclick="fitView()" title="Fit to view" style="font-size:11px;padding:4px 7px">⊡</button>
   </div>
+  <button class="tbtn" onclick="autoLayout()">⟲ Auto</button>
+  <button class="tbtn" onclick="exportSVG()">↓ SVG</button>
+  <button id="theme-btn" onclick="toggleTheme()" title="Toggle light / dark"><span id="theme-icon">☾</span></button>
+</div>
 
-  <!-- LEGEND -->
-  <div id="legend">
-    <span id="leg-lbl">Legend</span>
-    <div class="leg"><div class="lsw" style="background:var(--pk-bg);border:1px solid var(--pk-t)"></div>PK</div>
-    <div class="leg"><div class="lsw" style="background:var(--fk-bg);border:1px solid var(--fk-t)"></div>FK</div>
-    <div class="leg"><div class="lsw" style="background:var(--pi-bg);border:1px solid var(--pi-t)"></div>PI — Personal info</div>
-    <div class="leg"><div class="lsw" style="background:var(--mx-bg);border:1px solid var(--mx-t)"></div>Masked</div>
-    <div class="leg" style="gap:5px"><svg width="24" height="10"><line x1="0" y1="5" x2="18" y2="5" stroke="var(--accent)" stroke-width="2"/><polygon points="16,2 24,5 16,8" fill="var(--accent)"/></svg>Relationship</div>
+<!-- CANVAS -->
+<div id="canvas"
+  onmousedown="panStart(event)" onmousemove="panMove(event)"
+  onmouseup="panEnd()" onmouseleave="panEnd()" onwheel="onWheel(event)">
+  <svg id="erd-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div id="empty">
+    <div class="ei"><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 32 32"><rect x="2" y="3" width="11" height="9" rx="2"/><rect x="19" y="3" width="11" height="9" rx="2"/><rect x="2" y="20" width="11" height="9" rx="2"/><rect x="19" y="20" width="11" height="9" rx="2"/><line x1="7.5" y1="12" x2="7.5" y2="16"/><line x1="24.5" y1="12" x2="24.5" y2="16"/><line x1="7.5" y1="16" x2="24.5" y2="16"/></svg></div>
+    <div class="et">Loading diagram…</div>
+    <div class="es">Fetching schema.json from the repository</div>
   </div>
+  <div id="drawer">
+    <div id="drw-hdr">
+      <div><div id="drw-name"></div><div id="drw-sub"></div></div>
+      <button id="drw-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div id="drw-body"></div>
+  </div>
+  <div id="minimap">
+    <canvas id="mm-canvas" width="160" height="96"></canvas>
+    <div id="mm-vp"></div>
+  </div>
+</div>
+
+<!-- LEGEND -->
+<div id="legend">
+  <span id="leg-lbl">Legend</span>
+  <div class="leg"><div class="lsw" style="background:var(--pk-bg);border:1px solid var(--pk-t)"></div>PK — Primary key</div>
+  <div class="leg"><div class="lsw" style="background:var(--fk-bg);border:1px solid var(--fk-t)"></div>FK — Foreign key</div>
+  <div class="leg"><div class="lsw" style="background:var(--pi-bg);border:1px solid var(--pi-t)"></div>PI — Personal info</div>
+  <div class="leg"><div class="lsw" style="background:var(--mx-bg);border:1px solid var(--mx-t)"></div>Masked</div>
+  <div class="leg" style="gap:6px"><svg width="26" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="var(--accent)" stroke-width="1.8"/><polygon points="18,2 26,5 18,8" fill="var(--accent)"/></svg>Relationship</div>
+</div>
 </div>
 
 <div id="tip"><div id="tip-name"></div><div id="tip-body"></div></div>
@@ -299,37 +377,39 @@ code{background:var(--s2);padding:1px 5px;border-radius:3px;font-family:var(--mo
 
 <script>
 'use strict';
+// ══ THEME ════════════════════════════════════
+let isDark=true;
+function toggleTheme(){
+  isDark=!isDark;
+  document.documentElement.setAttribute('data-theme',isDark?'dark':'light');
+  document.getElementById('theme-icon').textContent=isDark?'☾':'☀';
+  if(data) renderERD();
+}
 
-// ══════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════
-let data=null, domain=null, selectedTable=null;
-let panX=0, panY=0, scale=1, isPanning=false, panStart_={x:0,y:0};
-let dragging=null, dragOffset={x:0,y:0}, dragMoved=false;
+// ══ STATE ════════════════════════════════════
+let data=null,domain=null,selectedTable=null;
+let panX=0,panY=0,scale=1,isPanning=false,panStart_={x:0,y:0};
+let dragging=null,dragOffset={x:0,y:0},dragMoved=false;
 const expandedTables={};
 
-// ── Layout constants ──────────────────────────
-const COLLAPSE_AT=4, PREVIEW=3;
-const TH_HEAD=36, TH_ROW=32, TH_EXP=26;
-const L1=10, L2=23, CH_N=7.8, CH_D=6.0, PAD=14;
+// ══ LAYOUT CONSTANTS ═════════════════════════
+const COLLAPSE_AT=4,PREVIEW=3;
+const TH_HEAD=38,TH_ROW=34,TH_EXP=28;
+const L1=11,L2=24,CH_N=7.6,CH_D=5.8,PAD=14;
 
 function bw(l){return l.length*6+11;}
 function totalBW(f){let w=0;if(f.t==='pk')w+=bw('PK')+3;if(f.t==='fk')w+=bw('FK')+3;if(f.pi)w+=bw('PI')+3;if(f.masked)w+=bw('M')+3;return w>0?w-3:0;}
-function TW(t){let mx=0;(t.fields||[]).forEach(f=>{const B=totalBW(f)+(totalBW(f)>0?10:0);mx=Math.max(mx,Math.max((f.n||'').length*CH_N,(f.dt||'').length*CH_D)+B+PAD*2);});return Math.max(200,Math.min(480,Math.ceil(Math.max(mx,(t.name||'').length*CH_N+PAD*2+64))));}
+function TW(t){let mx=0;(t.fields||[]).forEach(f=>{const B=totalBW(f)+(totalBW(f)>0?10:0);mx=Math.max(mx,Math.max((f.n||'').length*CH_N,(f.dt||'').length*CH_D)+B+PAD*2);});return Math.max(210,Math.min(480,Math.ceil(Math.max(mx,(t.name||'').length*CH_N+PAD*2+64))));}
 function TH(t){const tot=(t.fields||[]).length,exp=!!expandedTables[t.id],vis=(!exp&&tot>COLLAPSE_AT)?PREVIEW:tot;return TH_HEAD+vis*TH_ROW+(tot>COLLAPSE_AT?TH_EXP:4);}
 function ED(e){
-  if(Array.isArray(e)) return{from:e[0],to:e[1],label:e[2]||'',cardinality:'1:N',fromCol:'',toCol:''};
-  // Support both formats:
-  //   { label: "customer.ID = order.CUSTOMER_ID" }   ← legacy free-text
-  //   { fromCol: "ID", toCol: "CUSTOMER_ID" }         ← explicit (preferred)
+  if(Array.isArray(e))return{from:e[0],to:e[1],label:e[2]||'',cardinality:'1:N',fromCol:'',toCol:''};
   const r=Object.assign({cardinality:'1:N',fromCol:'',toCol:'',label:''},e);
-  // If fromCol/toCol provided, synthesize a label from them
-  if(r.fromCol&&r.toCol&&!r.label) r.label=`${r.fromCol} = ${r.toCol}`;
+  if(r.fromCol&&r.toCol&&!r.label)r.label=`${r.fromCol} = ${r.toCol}`;
   return r;
 }
-
 const NS='http://www.w3.org/2000/svg';
 const S=(tag,a={})=>{const e=document.createElementNS(NS,tag);Object.entries(a).forEach(([k,v])=>e.setAttribute(k,v));return e;};
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
 function rowStyle(f){
   if(f.t==='pk')return{bg:'var(--pk-bg)',fg:'var(--pk-t)'};
@@ -340,98 +420,83 @@ function rowStyle(f){
 }
 function tagBadges(f){const b=[];if(f.t==='pk')b.push({l:'PK',bg:'var(--pk-bg)',fg:'var(--pk-t)'});if(f.t==='fk')b.push({l:'FK',bg:'var(--fk-bg)',fg:'var(--fk-t)'});if(f.pi)b.push({l:'PI',bg:'var(--pi-bg)',fg:'var(--pi-t)'});if(f.masked)b.push({l:'M',bg:'var(--mx-bg)',fg:'var(--mx-t)'});return b;}
 
-// ══════════════════════════════════════════════
-// SCHEMA LOADING — fetches schema.json with cache-bust
-// ══════════════════════════════════════════════
+// ══ SCHEMA LOADING ═══════════════════════════
 async function loadSchema(manual=false){
   setSBState('loading','Fetching schema.json…','');
   try{
-    // Cache-bust so pipeline commits are always picked up immediately
-    const url=`./schema.json?v=${Date.now()}`;
-    const res=await fetch(url,{cache:'no-store'});
-    if(!res.ok) throw new Error(`HTTP ${res.status} — schema.json not found`);
+    const res=await fetch(`./schema.json?v=${Date.now()}`,{cache:'no-store'});
+    if(!res.ok)throw new Error(`HTTP ${res.status} — schema.json not found`);
     const raw=await res.json();
-    if(!raw.domains) throw new Error('"domains" key missing in schema.json');
-
-    // Validate layout keys match table IDs — common mistake
-    const warnings = [];
-    Object.entries(raw.domains).forEach(([domKey, dom]) => {
-      const tableIds = new Set((dom.tables||[]).map(t=>t.id));
-      const layoutKeys = Object.keys(dom.layout||{});
-      const mismatched = layoutKeys.filter(k=>!tableIds.has(k));
-      if(mismatched.length){
-        warnings.push(`Domain "${domKey}": layout keys [${mismatched.join(', ')}] don't match any table id — tables will be invisible. Use Auto layout to fix.`);
+    if(!raw.domains)throw new Error('"domains" key missing in schema.json');
+    // Auto-fix missing layout positions
+    Object.values(raw.domains).forEach(dom=>{
+      const tables=dom.tables||[];dom.layout=dom.layout||{};
+      const ids=new Set(tables.map(t=>t.id));
+      Object.keys(dom.layout).filter(k=>!ids.has(k)).forEach(k=>{console.warn(`ERD: stale layout key "${k}" ignored`);delete dom.layout[k];});
+      const missing=tables.filter(t=>!dom.layout[t.id]);
+      if(missing.length){
+        const C=Math.max(2,Math.ceil(Math.sqrt(tables.length)));
+        missing.forEach((t,i)=>{const idx=tables.filter(t2=>dom.layout[t2.id]).length+i;dom.layout[t.id]=[50+(idx%C)*380,50+Math.floor(idx/C)*300];});
       }
     });
-    if(warnings.length) console.warn('ERD schema warnings:\n'+warnings.join('\n'));
-    data=raw; domain=Object.keys(raw.domains)[0];
-    selectedTable=null;
-    Object.keys(expandedTables).forEach(k=>delete expandedTables[k]);
+    data=raw;domain=Object.keys(raw.domains)[0];
+    selectedTable=null;Object.keys(expandedTables).forEach(k=>delete expandedTables[k]);
     document.getElementById('empty').classList.add('hidden');
-    // Page title and header driven entirely from JSON
-    document.title = raw.title ? `${raw.title} — ERD Studio` : 'ERD Studio';
+    document.title=raw.title?`${raw.title} — ERD Studio`:'ERD Studio';
     document.getElementById('vtitle-sub').textContent=raw.title?`— ${raw.title}`:'';
-    buildPills(); renderERD(); setTimeout(fitView,60);
+    buildPills();renderERD();setTimeout(fitView,60);
     const meta=[];
-    if(raw.updatedAt) meta.push(`Updated ${raw.updatedAt}`);
-    if(raw.updatedBy) meta.push(`by ${raw.updatedBy}`);
-    setSBState('ok', `✓ Schema loaded — ${Object.values(raw.domains).reduce((a,d)=>a+(d.tables||[]).length,0)} tables`, meta.join(' · '));
-    if(manual) toast('✓ Schema reloaded from repository');
+    if(raw.updatedAt)meta.push(`Updated ${raw.updatedAt}`);
+    if(raw.updatedBy)meta.push(`by ${raw.updatedBy}`);
+    const totalT=Object.values(raw.domains).reduce((a,d)=>a+(d.tables||[]).length,0);
+    const totalD=Object.keys(raw.domains).length;
+    setSBState('ok',`✓ ${totalT} table${totalT!==1?'s':''} across ${totalD} domain${totalD!==1?'s':''}`,meta.join(' · '));
+    if(manual)toast('✓ Schema reloaded');
   }catch(e){
     setSBState('err',`✗ ${e.message}`,'Check that schema.json exists in the repo root');
-    document.getElementById('empty').querySelector('.et').textContent='Failed to load schema';
+    document.getElementById('empty').querySelector('.et').textContent='Failed to load';
     document.getElementById('empty').querySelector('.es').textContent=e.message;
   }
 }
-
-function reloadSchema(){ loadSchema(true); }
-
+function reloadSchema(){loadSchema(true);}
 function setSBState(state,msg,meta){
-  const dot=document.getElementById('sb-dot');
-  dot.className=state==='loading'?'loading':state==='ok'?'ok':'err';
+  document.getElementById('sb-dot').className=state==='loading'?'loading':state==='ok'?'ok':'err';
   document.getElementById('sb-msg').textContent=msg;
   document.getElementById('sb-meta').textContent=meta||'';
 }
 
-// ══════════════════════════════════════════════
-// GUIDE
-// ══════════════════════════════════════════════
+// ══ GUIDE ════════════════════════════════════
 let guideOpen=false;
 function toggleGuide(){
   guideOpen=!guideOpen;
   document.getElementById('guide').classList.toggle('open',guideOpen);
-  document.getElementById('guide-btn').textContent=guideOpen?'✕ Close guide':'📖 Guide';
+  document.getElementById('guide-btn').textContent=guideOpen?'✕ Close':'📖 Guide';
 }
 function gTab(name,btn){
   document.querySelectorAll('.gtab').forEach(b=>b.classList.remove('on'));
   document.querySelectorAll('.gpanel').forEach(p=>p.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('gtab-'+name).classList.add('on');
-  if(!guideOpen) toggleGuide();
+  btn.classList.add('on');document.getElementById('gtab-'+name).classList.add('on');
+  if(!guideOpen)toggleGuide();
 }
 
-// ══════════════════════════════════════════════
-// DOMAIN PILLS
-// ══════════════════════════════════════════════
+// ══ DOMAIN PILLS ═════════════════════════════
 function buildPills(){
   const c=document.getElementById('dpills');c.innerHTML='';
   if(!data)return;
   Object.entries(data.domains).forEach(([k,d])=>{
     const b=document.createElement('button');b.className='dpill';b.textContent=d.label||k;
     const on=k===domain;
-    b.style.cssText=`background:${on?d.color+'22':'transparent'};color:${on?d.color:'var(--t2)'};border-color:${on?d.color:'var(--b2)'}`;
+    b.style.cssText=`background:${on?d.color+'16':'transparent'};color:${on?d.color:'var(--t2)'};border-color:${on?d.color+'55':'var(--b3)'}`;
     b.onclick=()=>{domain=k;selectedTable=null;closeDrawer();buildPills();renderERD();};
     c.appendChild(b);
   });
 }
 
-// ══════════════════════════════════════════════
-// EDGE ROUTING
-// ══════════════════════════════════════════════
+// ══ EDGE ROUTING ═════════════════════════════
 function edgePts(layout,a,b,tables){
   if(!layout[a]||!layout[b])return null;
   const ta=tables.find(t=>t.id===a),tb=tables.find(t=>t.id===b);if(!ta||!tb)return null;
-  const [ax,ay]=layout[a],[bx,by]=layout[b];
+  const[ax,ay]=layout[a],[bx,by]=layout[b];
   const aw=TW(ta),bw_=TW(tb),ah=TH(ta),bh=TH(tb);
   const acx=ax+aw/2,acy=ay+ah/2,bcx=bx+bw_/2,bcy=by+bh/2,dx=bcx-acx,dy=bcy-acy;
   let x1,y1,x2,y2;
@@ -440,131 +505,96 @@ function edgePts(layout,a,b,tables){
   return[x1,y1,x2,y2];
 }
 
-// ══════════════════════════════════════════════
-// RENDER ERD
-// ══════════════════════════════════════════════
+// ══ RENDER ERD ═══════════════════════════════
 function renderERD(){
   const svg=document.getElementById('erd-svg');svg.innerHTML='';
   if(!data||!domain)return;
   const d=data.domains[domain];if(!d)return;
   const layout=d.layout||{},tables=d.tables||[],edges=d.edges||[];
-  const color = d.color || getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-  const cardBg = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim();
-  const inactiveLine = 'rgba(128,128,150,0.2)';
+  const color=d.color||css('--accent');
+  const cardBg=css('--surface');
+  const inactiveLine=isDark?'rgba(110,110,135,0.18)':'rgba(90,90,115,0.18)';
+
+  // Arrowhead
   const defs=S('defs');
-  const mkr=S('marker',{id:'arr',viewBox:'0 0 10 10',refX:8,refY:5,markerWidth:6,markerHeight:6,orient:'auto-start-reverse'});
-  mkr.appendChild(S('path',{d:'M2 1L8 5L2 9',fill:'none',stroke:color,'stroke-width':1.6,'stroke-linecap':'round','stroke-linejoin':'round'}));
+  const mkr=S('marker',{id:'arr',viewBox:'0 0 10 10',refX:8,refY:5,markerWidth:5,markerHeight:5,orient:'auto-start-reverse'});
+  mkr.appendChild(S('path',{d:'M2 1.5L8 5L2 8.5',fill:'none',stroke:color,'stroke-width':1.8,'stroke-linecap':'round','stroke-linejoin':'round'}));
   defs.appendChild(mkr);svg.appendChild(defs);
   const gE=S('g'),gT=S('g');
 
-  edges.forEach((raw,i)=>{
+  // ── EDGES ──
+  edges.forEach((raw)=>{
     const e=ED(raw);const pts=edgePts(layout,e.from,e.to,tables);if(!pts)return;
     const[x1,y1,x2,y2]=pts,dx=x2-x1,dy=y2-y1;
-    const active = selectedTable&&(e.from===selectedTable||e.to===selectedTable);
-    const pd=(Math.abs(dx)>10&&Math.abs(dy)>10)?`M${x1} ${y1} C${x1+dx*.45} ${y1} ${x2-dx*.45} ${y2} ${x2} ${y2}`:`M${x1} ${y1} L${x2} ${y2}`;
+    const active=selectedTable&&(e.from===selectedTable||e.to===selectedTable);
+    const pd=(Math.abs(dx)>10&&Math.abs(dy)>10)
+      ?`M${x1} ${y1} C${x1+dx*.42} ${y1} ${x2-dx*.42} ${y2} ${x2} ${y2}`
+      :`M${x1} ${y1} L${x2} ${y2}`;
     const mx=(x1+x2)/2,my=(y1+y2)/2;
-
     const g=S('g');g.style.cursor='pointer';
 
-    // ── Glow path (only when active/hovered — toggled via JS) ────────
-    const glowPath=S('path',{d:pd,fill:'none',stroke:color,'stroke-width':6,opacity:.1,'stroke-linecap':'round',display:'none'});
+    const glowPath=S('path',{d:pd,fill:'none',stroke:color,'stroke-width':8,opacity:.07,'stroke-linecap':'round',display:'none'});
     g.appendChild(glowPath);
-
-    // Wide transparent hit area
-    const hit=S('path',{d:pd,fill:'none',stroke:'transparent','stroke-width':14});
-    g.appendChild(hit);
-
-    // Visible line — starts dimmed, brightens on hover
-    const linePath=S('path',{d:pd,fill:'none',
-      stroke: active ? color : inactiveLine,
-      'stroke-width': active ? 2 : 1,
-      'stroke-dasharray': active ? 'none' : '5 4',
-      'stroke-linecap':'round','marker-end':'url(#arr)'});
+    const hit=S('path',{d:pd,fill:'none',stroke:'transparent','stroke-width':16});g.appendChild(hit);
+    const linePath=S('path',{d:pd,fill:'none',stroke:active?color:inactiveLine,'stroke-width':active?1.8:1,'stroke-dasharray':active?'none':'6 4','stroke-linecap':'round','marker-end':'url(#arr)'});
     g.appendChild(linePath);
 
-    // ── Build label card (always rendered, starts hidden) ─────────────
-    const fromTable = tables.find(t=>t.id===e.from);
-    const toTable   = tables.find(t=>t.id===e.to);
-    let joinLine = '';
-    if(e.fromCol && e.toCol){
-      joinLine = `${fromTable?.name||e.from}.${e.fromCol} = ${toTable?.name||e.to}.${e.toCol}`;
-    } else if(e.label){
-      joinLine = e.label;
-    }
-    const cardLine = e.cardinality || '1:N';
-
-    // Measure with canvas
-    const _c = document.createElement('canvas').getContext('2d');
-    const FONT_SZ=10, HPAD=10, VPAD=6;
-    _c.font=`700 ${FONT_SZ}px monospace`;
-    const joinW = joinLine ? _c.measureText(joinLine).width : 0;
-    const cardW = _c.measureText(cardLine).width;
-    const ROW_H = FONT_SZ + VPAD*2;
-    const hasJoin = joinLine.length > 0;
-    const innerW = Math.max(joinW, cardW);
-    const cardW_ = Math.ceil(innerW) + HPAD*2;
-    const cardH_ = hasJoin ? ROW_H*2+1 : ROW_H;
-    const cx = mx - cardW_/2, cy = my - cardH_/2;
-
-    // Label group — hidden by default
-    const labelG = S('g',{display:'none'});
-
-    labelG.appendChild(S('rect',{x:cx-3,y:cy-3,width:cardW_+6,height:cardH_+6,rx:10,fill:color,opacity:.14}));
-    labelG.appendChild(S('rect',{x:cx,y:cy,width:cardW_,height:cardH_,rx:7,fill:cardBg,stroke:color,'stroke-width':1.2}));
-
+    // Label card
+    const fromTable=tables.find(t=>t.id===e.from);
+    const toTable=tables.find(t=>t.id===e.to);
+    let joinLine='';
+    if(e.fromCol&&e.toCol)joinLine=`${fromTable?.name||e.from}.${e.fromCol} = ${toTable?.name||e.to}.${e.toCol}`;
+    else if(e.label)joinLine=e.label;
+    const cardLine=e.cardinality||'1:N';
+    const _c=document.createElement('canvas').getContext('2d');
+    const FSZ=10.5,HPAD=12,VPAD=7;
+    _c.font=`600 ${FSZ}px 'JetBrains Mono',monospace`;
+    const joinW=joinLine?_c.measureText(joinLine).width:0;
+    const cardW_m=_c.measureText(cardLine).width;
+    const ROW_H=FSZ+VPAD*2;
+    const hasJoin=joinLine.length>0;
+    const innerW=Math.max(joinW,cardW_m);
+    const cw_=Math.ceil(innerW)+HPAD*2;
+    const ch_=hasJoin?ROW_H*2+1:ROW_H;
+    const cx=mx-cw_/2,cy=my-ch_/2;
+    const labelG=S('g',{display:'none'});
+    labelG.appendChild(S('rect',{x:cx-4,y:cy-4,width:cw_+8,height:ch_+8,rx:12,fill:color,opacity:.09}));
+    labelG.appendChild(S('rect',{x:cx,y:cy,width:cw_,height:ch_,rx:8,fill:cardBg,stroke:color+'70','stroke-width':1.2}));
     const mkSpan=(txt,bold,muted)=>{
-      const sp=document.createElementNS(NS,'tspan');
-      sp.textContent=txt;
-      sp.setAttribute('fill', muted ? color : 'var(--text)');
-      if(muted)  sp.setAttribute('opacity','0.55');
-      if(bold)   sp.setAttribute('font-weight','700');
+      const sp=document.createElementNS(NS,'tspan');sp.textContent=txt;
+      sp.setAttribute('fill',muted?color:'var(--text)');
+      if(muted)sp.setAttribute('opacity','0.5');
+      if(bold)sp.setAttribute('font-weight','700');
       return sp;
     };
-
     if(hasJoin){
       const eqIdx=joinLine.indexOf('=');
-      const left =eqIdx>-1?joinLine.slice(0,eqIdx).trim():joinLine;
+      const left=eqIdx>-1?joinLine.slice(0,eqIdx).trim():joinLine;
       const right=eqIdx>-1?joinLine.slice(eqIdx+1).trim():'';
-      const dot1=left.indexOf('.'), dot2=right.indexOf('.');
-      const jt=S('text',{x:cx+HPAD+(innerW-joinW)/2,y:cy+ROW_H/2,'font-family':'monospace','font-size':FONT_SZ,'dominant-baseline':'central'});
+      const dot1=left.indexOf('.'),dot2=right.indexOf('.');
+      const jt=S('text',{x:cx+HPAD+(innerW-joinW)/2,y:cy+ROW_H/2,'font-family':"'JetBrains Mono',monospace",'font-size':FSZ,'dominant-baseline':'central'});
       if(dot1>-1){jt.appendChild(mkSpan(left.slice(0,dot1+1),false,true));jt.appendChild(mkSpan(left.slice(dot1+1),true,false));}
       else{jt.appendChild(mkSpan(left,true,false));}
-      jt.appendChild(mkSpan(' = ',true,true));
+      jt.appendChild(mkSpan(' = ',false,true));
       if(right){
         if(dot2>-1){jt.appendChild(mkSpan(right.slice(0,dot2+1),false,true));jt.appendChild(mkSpan(right.slice(dot2+1),true,false));}
         else{jt.appendChild(mkSpan(right,true,false));}
       }
       labelG.appendChild(jt);
-      labelG.appendChild(S('line',{x1:cx+6,y1:cy+ROW_H,x2:cx+cardW_-6,y2:cy+ROW_H,stroke:color,opacity:.25,'stroke-width':0.8}));
-      const ct=S('text',{x:mx,y:cy+ROW_H+ROW_H/2,'text-anchor':'middle','dominant-baseline':'central','font-family':'monospace','font-size':FONT_SZ,'font-weight':'700',fill:color});
-      ct.textContent=cardLine; labelG.appendChild(ct);
-    } else {
-      const ct=S('text',{x:mx,y:cy+cardH_/2,'text-anchor':'middle','dominant-baseline':'central','font-family':'monospace','font-size':FONT_SZ,'font-weight':'700',fill:color});
-      ct.textContent=cardLine; labelG.appendChild(ct);
+      labelG.appendChild(S('line',{x1:cx+8,y1:cy+ROW_H,x2:cx+cw_-8,y2:cy+ROW_H,stroke:color,opacity:.18,'stroke-width':1}));
+      const ct=S('text',{x:mx,y:cy+ROW_H+ROW_H/2,'text-anchor':'middle','dominant-baseline':'central','font-family':"'JetBrains Mono',monospace",'font-size':FSZ,'font-weight':'700',fill:color});
+      ct.textContent=cardLine;labelG.appendChild(ct);
+    }else{
+      const ct=S('text',{x:mx,y:cy+ch_/2,'text-anchor':'middle','dominant-baseline':'central','font-family':"'JetBrains Mono',monospace",'font-size':FSZ,'font-weight':'700',fill:color});
+      ct.textContent=cardLine;labelG.appendChild(ct);
     }
     g.appendChild(labelG);
-
-    // ── Hover: toggle label + line style purely via DOM, no re-render ──
-    hit.addEventListener('mouseenter',()=>{
-      labelG.setAttribute('display','block');
-      glowPath.setAttribute('display','block');
-      linePath.setAttribute('stroke', color);
-      linePath.setAttribute('stroke-width','2');
-      linePath.removeAttribute('stroke-dasharray');
-    });
-    hit.addEventListener('mouseleave',()=>{
-      labelG.setAttribute('display','none');
-      glowPath.setAttribute('display','none');
-      if(!active){
-        linePath.setAttribute('stroke',inactiveLine);
-        linePath.setAttribute('stroke-width','1');
-        linePath.setAttribute('stroke-dasharray','5 4');
-      }
-    });
-
+    hit.addEventListener('mouseenter',()=>{labelG.setAttribute('display','block');glowPath.setAttribute('display','block');linePath.setAttribute('stroke',color);linePath.setAttribute('stroke-width','2');linePath.removeAttribute('stroke-dasharray');});
+    hit.addEventListener('mouseleave',()=>{labelG.setAttribute('display','none');glowPath.setAttribute('display','none');if(!active){linePath.setAttribute('stroke',inactiveLine);linePath.setAttribute('stroke-width','1');linePath.setAttribute('stroke-dasharray','6 4');}});
     gE.appendChild(g);
   });
 
+  // ── TABLES ──
   tables.forEach(table=>{
     const pos=layout[table.id];if(!pos)return;
     const[x,y]=pos,tw=TW(table),h=TH(table);
@@ -573,29 +603,60 @@ function renderERD(){
     const visCount=collapsed?PREVIEW:total,showTgl=total>COLLAPSE_AT;
     const isSel=selectedTable===table.id;
     const isDimmed=selectedTable&&!isSel&&!edges.map(ED).some(e=>(e.from===selectedTable&&e.to===table.id)||(e.to===selectedTable&&e.from===table.id));
-    const g=S('g');g.style.cursor='pointer';g.style.opacity=isDimmed?'0.28':'1';g.style.transition='opacity .18s';
-    const cpId=`cp-${table.id}`;const cp=S('clipPath',{id:cpId});cp.appendChild(S('rect',{x:x+1,y,width:tw-2,height:h}));g.appendChild(cp);
-    g.appendChild(S('rect',{x:x+3,y:y+3,width:tw,height:h,rx:9,fill:'rgba(0,0,0,0.3)'}));
-    g.appendChild(S('rect',{x,y,width:tw,height:h,rx:9,fill:'var(--surface)',stroke:isSel?color:'var(--b2)','stroke-width':isSel?2:1}));
-    g.appendChild(S('rect',{x,y,width:tw,height:TH_HEAD,rx:9,fill:color+(isSel?'ff':'cc')}));
-    g.appendChild(S('rect',{x,y:y+TH_HEAD-8,width:tw,height:8,fill:color+(isSel?'ff':'cc')}));
-    const maxHC=Math.floor((tw-PAD*2-64)/CH_N);
-    const nt=S('text',{x:x+PAD,y:y+TH_HEAD/2+1,'dominant-baseline':'central',fill:'var(--text)',fontSize:10.5,fontWeight:700,fontFamily:'monospace'});
+    const g=S('g');g.style.cursor='pointer';g.style.opacity=isDimmed?'0.2':'1';g.style.transition='opacity .2s ease';
+
+    const cpId=`cp-${table.id}`;
+    const cp=S('clipPath',{id:cpId});cp.appendChild(S('rect',{x:x+1,y,width:tw-2,height:h}));g.appendChild(cp);
+
+    // Soft drop shadow
+    g.appendChild(S('rect',{x:x+2,y:y+5,width:tw-2,height:h,rx:10,fill:'var(--tshadow)',opacity:isDark?'1':'0.6',style:'filter:blur(10px)'}));
+
+    // Card body
+    g.appendChild(S('rect',{x,y,width:tw,height:h,rx:10,fill:'var(--surface)',stroke:isSel?color:'var(--b3)','stroke-width':isSel?1.5:0.8}));
+
+    // Selected glow ring
+    if(isSel){g.appendChild(S('rect',{x:x-2,y:y-2,width:tw+4,height:h+4,rx:12,fill:'none',stroke:color,'stroke-width':1.5,opacity:.35}));}
+
+    // Header — solid fill, no texture
+    g.appendChild(S('rect',{x,y,width:tw,height:TH_HEAD,rx:10,fill:color}));
+    g.appendChild(S('rect',{x,y:y+TH_HEAD-10,width:tw,height:10,fill:color}));
+
+    // Table name — Inter font, white
+    const maxHC=Math.floor((tw-PAD*2-70)/CH_N);
+    const nt=S('text',{x:x+PAD,y:y+TH_HEAD/2+1,'dominant-baseline':'central',fill:'rgba(255,255,255,0.95)',fontSize:11,fontWeight:700,fontFamily:"'Inter',sans-serif",'letter-spacing':'0.1'});
     nt.textContent=table.name.length>maxHC?table.name.slice(0,maxHC-1)+'…':table.name;g.appendChild(nt);
-    const cl=`${total} col${total!==1?'s':''}`,pw=cl.length*5.8+12,px2=x+tw-PAD-pw,py2=y+TH_HEAD/2-8;
-    g.appendChild(S('rect',{x:px2,y:py2,width:pw,height:16,rx:8,fill:'rgba(0,0,0,0.28)'}));
-    const pt=S('text',{x:px2+pw/2,y:py2+8,'text-anchor':'middle','dominant-baseline':'central',fill:'rgba(255,255,255,0.7)',fontSize:8.5,fontFamily:'monospace'});
+
+    // Col count pill
+    const cl=`${total} col${total!==1?'s':''}`;
+    const pw=cl.length*5.5+12,px2=x+tw-PAD-pw,py2=y+TH_HEAD/2-9;
+    g.appendChild(S('rect',{x:px2,y:py2,width:pw,height:18,rx:9,fill:'rgba(0,0,0,0.2)'}));
+    const pt=S('text',{x:px2+pw/2,y:py2+9,'text-anchor':'middle','dominant-baseline':'central',fill:'rgba(255,255,255,0.72)',fontSize:8.5,fontFamily:"'Inter',sans-serif",'font-weight':'500'});
     pt.textContent=cl;g.appendChild(pt);
 
     fields.slice(0,visCount).forEach((f,i)=>{
       const fy=y+TH_HEAD+i*TH_ROW+2,st=rowStyle(f);
       if(st.bg!=='transparent')g.appendChild(S('rect',{x:x+1,y:fy,width:tw-2,height:TH_ROW,fill:st.bg}));
-      const bdgs=tagBadges(f);let tx=x+tw-8;const by_=fy+(TH_ROW-14)/2;
-      bdgs.forEach(b=>{const bwidth=bw(b.l);tx-=bwidth+3;g.appendChild(S('rect',{x:tx,y:by_,width:bwidth,height:14,rx:3,fill:b.bg}));const bt=S('text',{x:tx+bwidth/2,y:by_+7,'text-anchor':'middle','dominant-baseline':'central',fill:b.fg,fontSize:8.5,fontWeight:700,fontFamily:'monospace'});bt.textContent=b.l;g.appendChild(bt);});
+
+      const bdgs=tagBadges(f);let tx=x+tw-8;const by_=fy+(TH_ROW-15)/2;
+      bdgs.forEach(b=>{
+        const bwidth=bw(b.l);tx-=bwidth+3;
+        g.appendChild(S('rect',{x:tx,y:by_,width:bwidth,height:15,rx:4,fill:b.bg}));
+        const bt=S('text',{x:tx+bwidth/2,y:by_+7.5,'text-anchor':'middle','dominant-baseline':'central',fill:b.fg,fontSize:8.5,fontWeight:700,fontFamily:"'Inter',sans-serif",'letter-spacing':'.3'});
+        bt.textContent=b.l;g.appendChild(bt);
+      });
       const re=bdgs.length?tx-6:x+tw-PAD;
-      const ncId=`nc-${table.id}-${i}`;const nc=S('clipPath',{id:ncId});nc.appendChild(S('rect',{x:x+PAD,y:fy,width:re-x-PAD,height:TH_ROW}));g.appendChild(nc);
-      const ft=S('text',{x:x+PAD,y:fy+L1,'dominant-baseline':'central',fill:st.fg,fontSize:10,fontWeight:600,fontFamily:'monospace','clip-path':`url(#${ncId})`});ft.textContent=f.n;g.appendChild(ft);
-      if(f.dt){const dty=S('text',{x:x+PAD,y:fy+L2,'dominant-baseline':'central',fill:'var(--t3)',fontSize:9,fontFamily:'monospace','clip-path':`url(#${ncId})`});dty.textContent=f.dt;g.appendChild(dty);}
+      const ncId=`nc-${table.id}-${i}`;
+      const nc=S('clipPath',{id:ncId});nc.appendChild(S('rect',{x:x+PAD,y:fy,width:re-x-PAD,height:TH_ROW}));g.appendChild(nc);
+
+      // Column name — JetBrains Mono, bold
+      const ft=S('text',{x:x+PAD,y:fy+L1,'dominant-baseline':'central',fill:st.fg,fontSize:10.5,fontWeight:600,fontFamily:"'JetBrains Mono',monospace",'clip-path':`url(#${ncId})`});
+      ft.textContent=f.n;g.appendChild(ft);
+
+      // Datatype — smaller, muted
+      if(f.dt){
+        const dty=S('text',{x:x+PAD,y:fy+L2,'dominant-baseline':'central',fill:'var(--t3)',fontSize:9,fontFamily:"'JetBrains Mono',monospace",'clip-path':`url(#${ncId})`});
+        dty.textContent=f.dt;g.appendChild(dty);
+      }
       if(i<visCount-1||showTgl)g.appendChild(S('line',{x1:x+1,y1:fy+TH_ROW,x2:x+tw-1,y2:fy+TH_ROW,stroke:'var(--b1)','stroke-width':0.5}));
     });
 
@@ -603,7 +664,7 @@ function renderERD(){
       const ty=y+TH_HEAD+visCount*TH_ROW+2,hidden=total-visCount;
       g.appendChild(S('rect',{x:x+1,y:ty,width:tw-2,height:TH_EXP-2,fill:'var(--s2)'}));
       const label=collapsed?`▾  Show ${hidden} more column${hidden!==1?'s':''}…`:'▴  Show less';
-      const tl=S('text',{x:x+tw/2,y:ty+TH_EXP/2,'text-anchor':'middle','dominant-baseline':'central',fill:'var(--ah)',fontSize:9.5,fontWeight:600,fontFamily:'monospace'});
+      const tl=S('text',{x:x+tw/2,y:ty+TH_EXP/2,'text-anchor':'middle','dominant-baseline':'central',fill:'var(--accent-h)',fontSize:9.5,fontWeight:500,fontFamily:"'Inter',sans-serif"});
       tl.textContent=label;g.appendChild(tl);
       const th=S('rect',{x:x+1,y:ty,width:tw-2,height:TH_EXP-2,fill:'transparent',style:'cursor:pointer'});
       th.onclick=ev=>{ev.stopPropagation();expandedTables[table.id]=!isExp;renderERD();};g.appendChild(th);
@@ -620,85 +681,170 @@ function renderERD(){
   applyTransform();updateMinimap();
 }
 
-// ══════════════════════════════════════════════
-// PAN & ZOOM
-// ══════════════════════════════════════════════
+// ══ PAN & ZOOM ═══════════════════════════════
 const canvas=document.getElementById('canvas');
-function applyTransform(){const svg=document.getElementById('erd-svg');svg.style.transform=`translate(${panX}px,${panY}px) scale(${scale})`;svg.style.transformOrigin='0 0';canvas.style.backgroundSize=`${24*scale}px ${24*scale}px`;canvas.style.backgroundPosition=`${panX%(24*scale)}px ${panY%(24*scale)}px`;document.getElementById('zlabel').textContent=Math.round(scale*100)+'%';updateMinimap();}
+function applyTransform(){
+  const svg=document.getElementById('erd-svg');
+  svg.style.transform=`translate(${panX}px,${panY}px) scale(${scale})`;
+  svg.style.transformOrigin='0 0';
+  canvas.style.backgroundSize=`${24*scale}px ${24*scale}px`;
+  canvas.style.backgroundPosition=`${panX%(24*scale)}px ${panY%(24*scale)}px`;
+  document.getElementById('zlabel').textContent=Math.round(scale*100)+'%';
+  updateMinimap();
+}
 function panStart(ev){if(ev.button!==0||dragging)return;isPanning=true;panStart_={x:ev.clientX-panX,y:ev.clientY-panY};canvas.classList.add('grabbing');}
 function panMove(ev){
-  if(dragging){const nx=ev.clientX/scale-dragOffset.x,ny=ev.clientY/scale-dragOffset.y;if(Math.abs(nx-dragging.origPos[0])>3||Math.abs(ny-dragging.origPos[1])>3)dragMoved=true;if(dragMoved&&data&&domain){data.domains[domain].layout=data.domains[domain].layout||{};data.domains[domain].layout[dragging.id]=[nx,ny];renderERD();}return;}
+  if(dragging){
+    const nx=ev.clientX/scale-dragOffset.x,ny=ev.clientY/scale-dragOffset.y;
+    if(Math.abs(nx-dragging.origPos[0])>3||Math.abs(ny-dragging.origPos[1])>3)dragMoved=true;
+    if(dragMoved&&data&&domain){data.domains[domain].layout=data.domains[domain].layout||{};data.domains[domain].layout[dragging.id]=[nx,ny];renderERD();}
+    return;
+  }
   if(!isPanning)return;panX=ev.clientX-panStart_.x;panY=ev.clientY-panStart_.y;applyTransform();
 }
 function panEnd(){if(dragging){dragging=null;dragMoved=false;}isPanning=false;canvas.classList.remove('grabbing');}
 function onWheel(ev){ev.preventDefault();const r=canvas.getBoundingClientRect(),mx=ev.clientX-r.left,my=ev.clientY-r.top;const d=ev.deltaY>0?-0.1:0.1,ns=Math.max(0.2,Math.min(3,scale+d));panX=mx-(mx-panX)*(ns/scale);panY=my-(my-panY)*(ns/scale);scale=ns;applyTransform();}
 function zoom(d){scale=Math.max(0.2,Math.min(3,scale+d));applyTransform();}
-function fitView(){if(!data||!domain)return;const d=data.domains[domain],layout=d.layout||{},tables=d.tables||[];if(!tables.length)return;let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;tables.forEach(t=>{const p=layout[t.id];if(!p)return;minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]+TW(t));maxY=Math.max(maxY,p[1]+TH(t));});const cw=canvas.clientWidth,ch=canvas.clientHeight,pad=60;const fw=maxX-minX+pad*2,fh=maxY-minY+pad*2;scale=Math.min(Math.max(0.3,Math.min(cw/fw,ch/fh)),1.4);panX=(cw-fw*scale)/2-minX*scale+pad*scale;panY=(ch-fh*scale)/2-minY*scale+pad*scale;applyTransform();}
-function autoLayout(){if(!data||!domain)return;const d=data.domains[domain],tables=d.tables||[];const COLS=Math.max(2,Math.ceil(Math.sqrt(tables.length)));const layout={};tables.forEach((t,i)=>{layout[t.id]=[50+(i%COLS)*(TW(t)+70),50+Math.floor(i/COLS)*300];});d.layout=layout;renderERD();setTimeout(fitView,30);toast('⟲ Auto-layout applied');}
+function fitView(){
+  if(!data||!domain)return;
+  const d=data.domains[domain],layout=d.layout||{},tables=d.tables||[];
+  if(!tables.length)return;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  tables.forEach(t=>{const p=layout[t.id];if(!p)return;minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]+TW(t));maxY=Math.max(maxY,p[1]+TH(t));});
+  const cw=canvas.clientWidth,ch=canvas.clientHeight,pad=60;
+  const fw=maxX-minX+pad*2,fh=maxY-minY+pad*2;
+  scale=Math.min(Math.max(0.3,Math.min(cw/fw,ch/fh)),1.4);
+  panX=(cw-fw*scale)/2-minX*scale+pad*scale;panY=(ch-fh*scale)/2-minY*scale+pad*scale;
+  applyTransform();
+}
+function autoLayout(){
+  if(!data||!domain)return;
+  const d=data.domains[domain],tables=d.tables||[];
+  const C=Math.max(2,Math.ceil(Math.sqrt(tables.length)));
+  const layout={};
+  tables.forEach((t,i)=>{layout[t.id]=[50+(i%C)*(TW(t)+70),50+Math.floor(i/C)*300];});
+  d.layout=layout;renderERD();setTimeout(fitView,30);toast('⟲ Auto-layout applied');
+}
 
-// ══════════════════════════════════════════════
-// TOOLTIP
-// ══════════════════════════════════════════════
-function showTip(ev,table,d,edges,tables){const tt=document.getElementById('tip');document.getElementById('tip-name').textContent=table.name;const pi=(table.fields||[]).filter(f=>f.pi||f.masked);const rels=(edges||[]).map(ED).filter(e=>e.from===table.id||e.to===table.id);let html=`<span style="color:var(--t3)">${table.fields.length} columns · ${rels.length} relation${rels.length!==1?'s':''}</span>`;if(pi.length)html+=`<br><span style="color:var(--pi-t);font-size:10px">⚠ ${pi.length} PI/Masked</span>`;if(table.note)html+=`<br><span style="color:var(--t2);font-size:10px">${table.note}</span>`;document.getElementById('tip-body').innerHTML=html;tt.style.left=(ev.clientX+14)+'px';tt.style.top=(ev.clientY-6)+'px';tt.classList.add('on');}
+// ══ TOOLTIP ══════════════════════════════════
+function showTip(ev,table,d,edges,tables){
+  const tt=document.getElementById('tip');
+  document.getElementById('tip-name').textContent=table.name;
+  const pi=(table.fields||[]).filter(f=>f.pi||f.masked);
+  const rels=(edges||[]).map(ED).filter(e=>e.from===table.id||e.to===table.id);
+  let html=`<span style="color:var(--t3)">${table.fields.length} columns · ${rels.length} relation${rels.length!==1?'s':''}</span>`;
+  if(pi.length)html+=`<br><span style="color:var(--pi-t);font-size:10.5px;margin-top:2px;display:block">⚠ ${pi.length} PI/Masked column${pi.length!==1?'s':''}</span>`;
+  if(table.note)html+=`<br><span style="color:var(--t2);font-size:11px;margin-top:2px;display:block">${table.note}</span>`;
+  document.getElementById('tip-body').innerHTML=html;
+  tt.style.left=(ev.clientX+16)+'px';tt.style.top=(ev.clientY-6)+'px';
+  tt.classList.add('on');
+}
 function hideTip(){document.getElementById('tip').classList.remove('on');}
-canvas.addEventListener('mousemove',ev=>{const t=document.getElementById('tip');t.style.left=(ev.clientX+14)+'px';t.style.top=(ev.clientY-6)+'px';});
+canvas.addEventListener('mousemove',ev=>{const t=document.getElementById('tip');t.style.left=(ev.clientX+16)+'px';t.style.top=(ev.clientY-6)+'px';});
 
-// ══════════════════════════════════════════════
-// DRAWER
-// ══════════════════════════════════════════════
+// ══ DRAWER ═══════════════════════════════════
 function openDrawer(table,d,edges,tables){
   document.getElementById('drw-name').textContent=table.name;
   const pi=(table.fields||[]).filter(f=>f.pi||f.masked);
-  document.getElementById('drw-sub').innerHTML=`<span style="color:var(--t3)">${table.fields.length} columns</span>`+(pi.length?` · <span style="color:var(--pi-t)">⚠ ${pi.length} PI/Masked</span>`:'');
+  document.getElementById('drw-sub').innerHTML=
+    `<span style="color:var(--t3)">${table.fields.length} columns</span>`+
+    (pi.length?` · <span style="color:var(--pi-t)">⚠ ${pi.length} PI/Masked</span>`:'');
   const body=document.getElementById('drw-body');body.innerHTML='';
   const fs=document.createElement('div');fs.className='dsec';fs.innerHTML='<div class="dsec-t">Columns</div>';
-  (table.fields||[]).forEach(f=>{const bdgs=tagBadges(f).map(b=>`<span class="tag t-${b.l.toLowerCase()}">${b.l}</span>`).join('');const row=document.createElement('div');row.className='dfield';row.innerHTML=`<span class="dfn">${f.n}</span><span class="dft">${f.dt||''}</span><div style="display:flex;gap:3px">${bdgs}</div>`;if(f.note)row.title=f.note;fs.appendChild(row);});
+  (table.fields||[]).forEach(f=>{
+    const bdgs=tagBadges(f).map(b=>`<span class="tag t-${b.l.toLowerCase()}">${b.l}</span>`).join('');
+    const row=document.createElement('div');row.className='dfield';
+    row.innerHTML=`<span class="dfn">${f.n}</span><span class="dft">${f.dt||''}</span><div style="display:flex;gap:3px">${bdgs}</div>`;
+    if(f.note)row.title=f.note;fs.appendChild(row);
+  });
   body.appendChild(fs);
   const rels=(edges||[]).map(ED).filter(e=>e.from===table.id||e.to===table.id);
-  if(rels.length){const rs=document.createElement('div');rs.className='dsec';rs.innerHTML=`<div class="dsec-t">Relationships (${rels.length})</div>`;rels.forEach(e=>{const other=e.from===table.id?e.to:e.from;const ot=tables.find(t=>t.id===other);const dir=e.from===table.id?'→':'←';
-    // Build join info line
-    let joinInfo='';
-    if(e.fromCol&&e.toCol){
-      const leftCol  = e.from===table.id ? e.fromCol : e.toCol;
-      const rightCol = e.from===table.id ? e.toCol   : e.fromCol;
-      joinInfo=`<div style="font-size:10px;font-family:var(--mono);color:var(--t3);margin-top:3px;padding-left:18px">${table.name}.<span style="color:var(--ah)">${leftCol}</span> = ${ot?.name||other}.<span style="color:var(--ah)">${rightCol}</span></div>`;
-    } else if(e.label){
-      joinInfo=`<div style="font-size:10px;font-family:var(--mono);color:var(--t3);margin-top:3px;padding-left:18px">${e.label}</div>`;
-    }
-    const row=document.createElement('div');row.className='rel-chip';row.style.flexDirection='column';row.style.alignItems='flex-start';row.style.gap='0';
-    row.innerHTML=`<div style="display:flex;align-items:center;gap:6px;width:100%"><span class="rel-dir">${dir}</span><span class="rel-tn">${ot?.name||other}</span><span class="rel-via">${e.cardinality||'1:N'}</span></div>${joinInfo}`;
-    row.onclick=()=>{selectedTable=other;renderERD();openDrawer(ot,d,edges,tables);};rs.appendChild(row);});body.appendChild(rs);}
-  if(table.note){const ns=document.createElement('div');ns.className='dsec';ns.innerHTML=`<div class="dsec-t">Notes</div><div style="font-size:11px;color:var(--t2);line-height:1.6">${table.note}</div>`;body.appendChild(ns);}
+  if(rels.length){
+    const rs=document.createElement('div');rs.className='dsec';
+    rs.innerHTML=`<div class="dsec-t">Relationships (${rels.length})</div>`;
+    rels.forEach(e=>{
+      const other=e.from===table.id?e.to:e.from;
+      const ot=tables.find(t=>t.id===other);
+      const dir=e.from===table.id?'→':'←';
+      let joinInfo='';
+      if(e.fromCol&&e.toCol){
+        const lc=e.from===table.id?e.fromCol:e.toCol;
+        const rc=e.from===table.id?e.toCol:e.fromCol;
+        joinInfo=`<div style="font-size:10px;font-family:var(--mono);color:var(--t3);margin-top:4px;padding-left:18px">${table.name}.<span style="color:var(--accent-h)">${lc}</span> = ${ot?.name||other}.<span style="color:var(--accent-h)">${rc}</span></div>`;
+      }else if(e.label){joinInfo=`<div style="font-size:10px;font-family:var(--mono);color:var(--t3);margin-top:4px;padding-left:18px">${e.label}</div>`;}
+      const row=document.createElement('div');row.className='rel-chip';
+      row.style.cssText='flex-direction:column;align-items:flex-start;gap:0';
+      row.innerHTML=`<div style="display:flex;align-items:center;gap:7px;width:100%"><span class="rel-dir">${dir}</span><span class="rel-tn">${ot?.name||other}</span><span class="rel-via">${e.cardinality||'1:N'}</span></div>${joinInfo}`;
+      row.onclick=()=>{selectedTable=other;renderERD();openDrawer(ot,d,edges,tables);};
+      rs.appendChild(row);
+    });
+    body.appendChild(rs);
+  }
+  if(table.note){const ns=document.createElement('div');ns.className='dsec';ns.innerHTML=`<div class="dsec-t">Notes</div><div style="font-size:12px;color:var(--t2);line-height:1.7">${table.note}</div>`;body.appendChild(ns);}
   document.getElementById('drawer').classList.add('open');
 }
 function closeDrawer(){document.getElementById('drawer').classList.remove('open');selectedTable=null;if(data)renderERD();}
 
-// ══════════════════════════════════════════════
-// MINIMAP
-// ══════════════════════════════════════════════
-function updateMinimap(){const mc=document.getElementById('mm-canvas'),ctx=mc.getContext('2d');const W=150,H=90;ctx.clearRect(0,0,W,H);if(!data||!domain)return;const d=data.domains[domain],layout=d.layout||{},tables=d.tables||[];let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;tables.forEach(t=>{const p=layout[t.id];if(!p)return;minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]+TW(t));maxY=Math.max(maxY,p[1]+TH(t));});const fw=maxX-minX||1,fh=maxY-minY||1,sc=Math.min((W-8)/fw,(H-8)/fh);const ox=(W-fw*sc)/2-minX*sc,oy=(H-fh*sc)/2-minY*sc;const col=d.color||getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();tables.forEach(t=>{const p=layout[t.id];if(!p)return;ctx.fillStyle=col+'33';ctx.strokeStyle=t.id===selectedTable?col:col+'55';ctx.lineWidth=t.id===selectedTable?1.5:0.5;ctx.beginPath();ctx.roundRect(p[0]*sc+ox,p[1]*sc+oy,TW(t)*sc,TH(t)*sc,2);ctx.fill();ctx.stroke();});const cw=canvas.clientWidth,ch=canvas.clientHeight,vp=document.getElementById('mm-vp');vp.style.left=Math.max(0,(-panX/scale)*sc+ox)+'px';vp.style.top=Math.max(0,(-panY/scale)*sc+oy)+'px';vp.style.width=Math.min(W,(cw/scale)*sc)+'px';vp.style.height=Math.min(H,(ch/scale)*sc)+'px';}
+// ══ MINIMAP ══════════════════════════════════
+function updateMinimap(){
+  const mc=document.getElementById('mm-canvas'),ctx=mc.getContext('2d');
+  const W=160,H=96;ctx.clearRect(0,0,W,H);
+  if(!data||!domain)return;
+  const d=data.domains[domain],layout=d.layout||{},tables=d.tables||[];
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  tables.forEach(t=>{const p=layout[t.id];if(!p)return;minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]+TW(t));maxY=Math.max(maxY,p[1]+TH(t));});
+  const fw=maxX-minX||1,fh=maxY-minY||1,sc=Math.min((W-10)/fw,(H-10)/fh);
+  const ox=(W-fw*sc)/2-minX*sc,oy=(H-fh*sc)/2-minY*sc;
+  const col=d.color||css('--accent');
+  tables.forEach(t=>{
+    const p=layout[t.id];if(!p)return;
+    ctx.fillStyle=col+(isDark?'22':'15');ctx.strokeStyle=t.id===selectedTable?col:col+(isDark?'44':'30');
+    ctx.lineWidth=t.id===selectedTable?1.5:0.5;
+    ctx.beginPath();ctx.roundRect(p[0]*sc+ox,p[1]*sc+oy,TW(t)*sc,TH(t)*sc,2);ctx.fill();ctx.stroke();
+  });
+  const cw=canvas.clientWidth,ch=canvas.clientHeight,vp=document.getElementById('mm-vp');
+  vp.style.left=Math.max(0,(-panX/scale)*sc+ox)+'px';vp.style.top=Math.max(0,(-panY/scale)*sc+oy)+'px';
+  vp.style.width=Math.min(W,(cw/scale)*sc)+'px';vp.style.height=Math.min(H,(ch/scale)*sc)+'px';
+}
 
-// ══════════════════════════════════════════════
-// EXPORT SVG
-// ══════════════════════════════════════════════
-function exportSVG(){if(!data||!domain){toast('No diagram loaded','#ef4444');return;}const svgEl=document.getElementById('erd-svg');const d=data.domains[domain],layout=d.layout||{},tables=d.tables||[];let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;tables.forEach(t=>{const p=layout[t.id];if(!p)return;minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]+TW(t));maxY=Math.max(maxY,p[1]+TH(t));});const pad=40,clone=svgEl.cloneNode(true);clone.setAttribute('viewBox',`${minX-pad} ${minY-pad} ${maxX-minX+pad*2} ${maxY-minY+pad*2}`);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');const bgColor=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();clone.style=`background:${bgColor}`;const blob=new Blob([clone.outerHTML],{type:'image/svg+xml'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`erd_${data.title?data.title.replace(/\s+/g,'_'):domain}.svg`;a.click();toast('✓ SVG exported');}
+// ══ EXPORT SVG ═══════════════════════════════
+function exportSVG(){
+  if(!data||!domain){toast('No diagram loaded');return;}
+  const svgEl=document.getElementById('erd-svg');
+  const d=data.domains[domain],layout=d.layout||{},tables=d.tables||[];
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  tables.forEach(t=>{const p=layout[t.id];if(!p)return;minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]+TW(t));maxY=Math.max(maxY,p[1]+TH(t));});
+  const pad=48,clone=svgEl.cloneNode(true);
+  clone.setAttribute('viewBox',`${minX-pad} ${minY-pad} ${maxX-minX+pad*2} ${maxY-minY+pad*2}`);
+  clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  clone.style=`background:${css('--bg')}`;
+  const blob=new Blob([clone.outerHTML],{type:'image/svg+xml'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`${data.title?data.title.replace(/\s+/g,'_'):domain}.svg`;
+  a.click();toast('✓ SVG exported');
+}
 
-// ══════════════════════════════════════════════
-// TOAST
-// ══════════════════════════════════════════════
+// ══ TOAST ════════════════════════════════════
 let toastTimer=null;
-function toast(msg,color='#22c55e'){const t=document.getElementById('toast');t.textContent=msg;t.style.color=color;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2400);}
+function toast(msg,col){
+  const t=document.getElementById('toast');t.textContent=msg;
+  t.style.color=col||css('--ok');
+  t.classList.add('show');clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
+}
 
-// ══════════════════════════════════════════════
-// KEYBOARD
-// ══════════════════════════════════════════════
-document.addEventListener('keydown',ev=>{if(ev.key==='Escape')closeDrawer();if((ev.metaKey||ev.ctrlKey)&&ev.key==='+'){ev.preventDefault();zoom(0.15);}if((ev.metaKey||ev.ctrlKey)&&ev.key==='-'){ev.preventDefault();zoom(-0.15);}if((ev.metaKey||ev.ctrlKey)&&ev.key==='0'){ev.preventDefault();fitView();}});
+// ══ KEYBOARD ═════════════════════════════════
+document.addEventListener('keydown',ev=>{
+  if(ev.key==='Escape')closeDrawer();
+  if((ev.metaKey||ev.ctrlKey)&&ev.key==='+'){ev.preventDefault();zoom(0.15);}
+  if((ev.metaKey||ev.ctrlKey)&&ev.key==='-'){ev.preventDefault();zoom(-0.15);}
+  if((ev.metaKey||ev.ctrlKey)&&ev.key==='0'){ev.preventDefault();fitView();}
+});
 document.addEventListener('mousemove',ev=>{if(dragging)panMove(ev);});
 document.addEventListener('mouseup',()=>{if(dragging)panEnd();});
 
-// ══════════════════════════════════════════════
-// BOOT
-// ══════════════════════════════════════════════
+// ══ BOOT ═════════════════════════════════════
 loadSchema();
 </script>
 </body>
