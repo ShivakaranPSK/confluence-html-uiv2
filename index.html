@@ -353,7 +353,7 @@ async function loadSchema(manual=false){
     const raw=await res.json();
     if(!raw.domains) throw new Error('"domains" key missing in schema.json');
     data=raw; domain=Object.keys(raw.domains)[0];
-    selectedTable=null; hoveredEdge=null;
+    selectedTable=null;
     Object.keys(expandedTables).forEach(k=>delete expandedTables[k]);
     document.getElementById('empty').classList.add('hidden');
     document.getElementById('vtitle-sub').textContent=raw.title?`— ${raw.title}`:'';
@@ -406,7 +406,7 @@ function buildPills(){
     const b=document.createElement('button');b.className='dpill';b.textContent=d.label||k;
     const on=k===domain;
     b.style.cssText=`background:${on?d.color+'22':'transparent'};color:${on?d.color:'var(--t2)'};border-color:${on?d.color:'var(--b2)'}`;
-    b.onclick=()=>{domain=k;selectedTable=null;hoveredEdge=null;closeDrawer();buildPills();renderERD();};
+    b.onclick=()=>{domain=k;selectedTable=null;closeDrawer();buildPills();renderERD();};
     c.appendChild(b);
   });
 }
