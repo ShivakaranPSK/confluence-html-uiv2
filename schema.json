@@ -107,8 +107,8 @@
         }
       ],
       "layout": {
-        "customer": [60, 60],
-        "order":    [480, 60]
+        "customers": [60, 60],
+        "orders":    [480, 60]
       }
     }
   }
