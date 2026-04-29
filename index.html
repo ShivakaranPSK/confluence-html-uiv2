@@ -453,106 +453,147 @@ function renderERD(){
     hit.onmouseleave=()=>{hoveredEdge=null;renderERD();};
     g.appendChild(hit);
     g.appendChild(S('path',{d:pd,fill:'none',stroke:active?color:'rgba(128,128,150,0.22)','stroke-width':active?2:1,'stroke-dasharray':active?'none':'5 4','stroke-linecap':'round','marker-end':'url(#arr)'}));
+
     if(active){
-      // ── Build join label lines ──────────────────────────────────────────
-      // Line 1: join condition  e.g.  customer.ID = order.CUSTOMER_ID
-      // Line 2: cardinality    e.g.  1:N
       const fromTable = tables.find(t=>t.id===e.from);
       const toTable   = tables.find(t=>t.id===e.to);
+
+      // Build the two display strings
       let joinLine = e.label || '';
-      // If fromCol/toCol exist, render them as  TABLE.COL = TABLE.COL
       if(e.fromCol && e.toCol){
-        const fn_= (fromTable?.name||e.from)+'.'+e.fromCol;
-        const tn_ = (toTable?.name||e.to)+'.'+e.toCol;
-        joinLine = `${fn_} = ${tn_}`;
+        joinLine = `${fromTable?.name||e.from}.${e.fromCol} = ${toTable?.name||e.to}.${e.toCol}`;
       }
-      const cardLine  = e.cardinality||'1:N';
+      const cardLine = e.cardinality || '1:N';
+      const HPAD=14, VPAD=8;
 
-      // ── Measure text widths precisely ──────────────────────────────────
-      const FONT_JOIN = 9.5, FONT_CARD = 9, MONO_W = 6.0; // monospace ch width at 9.5px
-      const joinW  = joinLine.length  * MONO_W;
-      const cardW  = cardLine.length * (MONO_W*0.95);
-      const HPAD=12, VPAD=8, LINE_GAP=14;
+      // ── Step 1: render text nodes into a hidden staging group ──────────
+      // We render, measure with getBBox(), then size and position the
+      // background rect to exactly fit. No character-width guessing.
 
-      // Card dimensions
-      const cardW_ = Math.max(joinW, cardW) + HPAD*2;
-      const cardH  = joinLine ? VPAD*2 + LINE_GAP + 12 : VPAD*2 + 14;
+      const labelGroup = S('g');
 
-      // Position: mid-point of edge, offset slightly so it doesn't sit on the line
-      const cx = mx - cardW_/2;
-      const cy = my - cardH/2 - 2;
+      // Cardinality badge (always shown, compact)
+      const cardText = S('text',{
+        x:0, y:0,
+        'text-anchor':'middle','dominant-baseline':'central',
+        fill:color, fontSize:10, fontWeight:700, fontFamily:'monospace'
+      });
+      cardText.textContent = cardLine;
 
-      // ── Card background ───────────────────────────────────────────────
-      // Outer glow
-      g.appendChild(S('rect',{x:cx-2,y:cy-2,width:cardW_+4,height:cardH+4,rx:10,
-        fill:color,opacity:0.15}));
-      // Main card
-      g.appendChild(S('rect',{x:cx,y:cy,width:cardW_,height:cardH,rx:8,
-        fill:'#1a1a20',stroke:color,'stroke-width':1.5,opacity:1}));
-
-      // ── Join condition (line 1) ───────────────────────────────────────
       if(joinLine){
-        // "from" side — table name dimmed, col name bright
-        const eq = joinLine.indexOf('=');
-        if(eq>-1){
-          const left  = joinLine.slice(0,eq).trim();   // e.g. "CUSTOMER.ID"
-          const right = joinLine.slice(eq+1).trim();   // e.g. "ORDER.CUSTOMER_ID"
-          const dot1  = left.indexOf('.');
-          const dot2  = right.indexOf('.');
+        // ── Styled join line: render each segment, measure, then backdrop ──
 
-          // Render left side: TABLE.COL
-          let curX = cx + HPAD;
-          const ly = cy + VPAD + 6;
+        // Parse: LEFT = RIGHT  where LEFT/RIGHT may be TABLE.COL
+        const eqIdx = joinLine.indexOf('=');
+        const left  = eqIdx>-1 ? joinLine.slice(0,eqIdx).trim() : joinLine;
+        const right = eqIdx>-1 ? joinLine.slice(eqIdx+1).trim() : '';
 
-          if(dot1>-1){
-            const tbl_=left.slice(0,dot1+1); // "CUSTOMER."
-            const col_=left.slice(dot1+1);   // "ID"
-            const t1=S('text',{x:curX,y:ly,'dominant-baseline':'central',fill:color,opacity:.55,fontSize:FONT_JOIN,fontFamily:'monospace'});
-            t1.textContent=tbl_; g.appendChild(t1);
-            curX += tbl_.length*MONO_W;
-            const t2=S('text',{x:curX,y:ly,'dominant-baseline':'central',fill:'#fff',fontSize:FONT_JOIN,fontWeight:700,fontFamily:'monospace'});
-            t2.textContent=col_; g.appendChild(t2);
-            curX += col_.length*MONO_W;
-          } else {
-            const t1=S('text',{x:curX,y:ly,'dominant-baseline':'central',fill:'#fff',fontSize:FONT_JOIN,fontWeight:700,fontFamily:'monospace'});
-            t1.textContent=left; g.appendChild(t1); curX+=left.length*MONO_W;
-          }
-          // "=" operator
-          const eq_=S('text',{x:curX+4,y:ly,'dominant-baseline':'central',fill:color,fontSize:FONT_JOIN,fontWeight:700,fontFamily:'monospace'});
-          eq_.textContent='='; g.appendChild(eq_); curX+=MONO_W+8;
+        const dot1  = left.indexOf('.');
+        const dot2  = right.indexOf('.');
 
-          // Render right side: TABLE.COL
-          if(dot2>-1){
-            const tbl_=right.slice(0,dot2+1);
-            const col_=right.slice(dot2+1);
-            const t3=S('text',{x:curX,y:ly,'dominant-baseline':'central',fill:color,opacity:.55,fontSize:FONT_JOIN,fontFamily:'monospace'});
-            t3.textContent=tbl_; g.appendChild(t3);
-            curX+=tbl_.length*MONO_W;
-            const t4=S('text',{x:curX,y:ly,'dominant-baseline':'central',fill:'#fff',fontSize:FONT_JOIN,fontWeight:700,fontFamily:'monospace'});
-            t4.textContent=col_; g.appendChild(t4);
-          } else {
-            const t3=S('text',{x:curX,y:ly,'dominant-baseline':'central',fill:'#fff',fontSize:FONT_JOIN,fontWeight:700,fontFamily:'monospace'});
-            t3.textContent=right; g.appendChild(t3);
-          }
+        // Render all text segments at x=0 first; we'll shift after measuring
+        const segs = []; // {el, isCol}
+
+        if(dot1>-1){
+          const tPre=S('text',{'dominant-baseline':'central',fill:color,opacity:.6,fontSize:10,fontFamily:'monospace'});
+          tPre.textContent=left.slice(0,dot1+1); // "TABLE."
+          const tCol=S('text',{'dominant-baseline':'central',fill:'#fff',fontSize:10,fontWeight:700,fontFamily:'monospace'});
+          tCol.textContent=left.slice(dot1+1);   // "COL"
+          segs.push(tPre,tCol);
         } else {
-          // No "=" — render as plain label
-          const lt=S('text',{x:cx+HPAD,y:cy+VPAD+6,'dominant-baseline':'central',fill:'#fff',fontSize:FONT_JOIN,fontWeight:600,fontFamily:'monospace'});
-          lt.textContent=joinLine; g.appendChild(lt);
+          const t=S('text',{'dominant-baseline':'central',fill:'#fff',fontSize:10,fontWeight:700,fontFamily:'monospace'});
+          t.textContent=left; segs.push(t);
         }
 
-        // Divider between join line and cardinality
-        g.appendChild(S('line',{x1:cx+8,y1:cy+VPAD+LINE_GAP-1,x2:cx+cardW_-8,y2:cy+VPAD+LINE_GAP-1,
-          stroke:color,opacity:.2,'stroke-width':0.8}));
+        const tEq=S('text',{'dominant-baseline':'central',fill:color,fontSize:10,fontWeight:700,fontFamily:'monospace'});
+        tEq.textContent=' = '; segs.push(tEq);
 
-        // Cardinality (line 2)
-        const ct=S('text',{x:cx+cardW_/2,y:cy+VPAD+LINE_GAP+8,'text-anchor':'middle','dominant-baseline':'central',
-          fill:color,fontSize:FONT_CARD,fontWeight:700,fontFamily:'monospace',opacity:.9});
-        ct.textContent=cardLine; g.appendChild(ct);
+        if(right){
+          if(dot2>-1){
+            const tPre=S('text',{'dominant-baseline':'central',fill:color,opacity:.6,fontSize:10,fontFamily:'monospace'});
+            tPre.textContent=right.slice(0,dot2+1);
+            const tCol=S('text',{'dominant-baseline':'central',fill:'#fff',fontSize:10,fontWeight:700,fontFamily:'monospace'});
+            tCol.textContent=right.slice(dot2+1);
+            segs.push(tPre,tCol);
+          } else {
+            const t=S('text',{'dominant-baseline':'central',fill:'#fff',fontSize:10,fontWeight:700,fontFamily:'monospace'});
+            t.textContent=right; segs.push(t);
+          }
+        }
+
+        // Append to DOM so getBBox() works, all at y=0 x=0 initially
+        segs.forEach(el=>{ el.setAttribute('y','0'); el.setAttribute('x','0'); labelGroup.appendChild(el); });
+        labelGroup.appendChild(cardText);
+        svg.appendChild(labelGroup);
+
+        // ── Step 2: lay out segments left-to-right using actual bbox widths ──
+        const LINE_Y = 0;
+        const CARD_Y = 18; // below join line
+        let curX = 0;
+        segs.forEach(el=>{
+          el.setAttribute('x', curX);
+          el.setAttribute('y', LINE_Y);
+          try{ curX += el.getBBox().width; } catch(e){ curX += el.textContent.length*6.2; }
+        });
+        const joinW = curX;
+
+        // Measure cardinality text
+        cardText.setAttribute('x', joinW/2);
+        cardText.setAttribute('y', CARD_Y + 8);
+        let cardW2 = 40;
+        try{ cardW2 = cardText.getBBox().width; } catch(e){}
+
+        // ── Step 3: size the card to fit both lines ───────────────────────
+        const innerW = Math.max(joinW, cardW2);
+        const cardW_ = innerW + HPAD*2;
+        const cardH_ = VPAD + CARD_Y + 16 + VPAD;
+
+        // Offset everything so card is centred on edge midpoint
+        const cx = mx - cardW_/2;
+        const cy = my - cardH_/2;
+
+        // Shift all segments into position
+        segs.forEach(el=>{
+          el.setAttribute('x', parseFloat(el.getAttribute('x')) + cx + HPAD + (innerW-joinW)/2);
+          el.setAttribute('y', cy + VPAD + 10);
+        });
+        cardText.setAttribute('x', mx); // already text-anchor:middle
+        cardText.setAttribute('y', cy + VPAD + 10 + CARD_Y);
+
+        // Divider between join line and cardinality
+        const divider = S('line',{
+          x1:cx+10, y1:cy+VPAD+18, x2:cx+cardW_-10, y2:cy+VPAD+18,
+          stroke:color, opacity:.22, 'stroke-width':0.8
+        });
+
+        // ── Step 4: insert background BEHIND the text ─────────────────────
+        // Remove from DOM, re-insert in correct z-order: glow → card → divider → text
+        svg.removeChild(labelGroup);
+        const glow = S('rect',{x:cx-3,y:cy-3,width:cardW_+6,height:cardH_+6,rx:12,fill:color,opacity:.12});
+        const card = S('rect',{x:cx,y:cy,width:cardW_,height:cardH_,rx:9,fill:'#12121a',stroke:color,'stroke-width':1.5});
+        g.appendChild(glow);
+        g.appendChild(card);
+        g.appendChild(divider);
+        segs.forEach(el=>g.appendChild(el));
+        g.appendChild(cardText);
+
       } else {
-        // No join line — just cardinality centred
-        const ct=S('text',{x:cx+cardW_/2,y:cy+cardH/2,'text-anchor':'middle','dominant-baseline':'central',
-          fill:color,fontSize:FONT_CARD,fontWeight:700,fontFamily:'monospace'});
-        ct.textContent=cardLine; g.appendChild(ct);
+        // No join line — just cardinality pill
+        labelGroup.appendChild(cardText);
+        cardText.setAttribute('x', mx);
+        cardText.setAttribute('y', my);
+        svg.appendChild(labelGroup);
+
+        let cardTextW = 40;
+        try{ cardTextW = cardText.getBBox().width; } catch(e){}
+        svg.removeChild(labelGroup);
+
+        const pillW = cardTextW + HPAD*2;
+        const pillH = 20;
+        g.appendChild(S('rect',{x:mx-pillW/2,y:my-pillH/2,width:pillW,height:pillH,rx:10,fill:'#12121a',stroke:color,'stroke-width':1.5}));
+        cardText.setAttribute('x', mx);
+        cardText.setAttribute('y', my);
+        g.appendChild(cardText);
       }
     }
     gE.appendChild(g);
