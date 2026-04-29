@@ -56,6 +56,60 @@
         "customer": [60, 60],
         "order":    [480, 60]
       }
+    },
+    "customers" :{
+      "label": "Orders & Customers tab 2",
+      "color": "#6366f1",
+      "tables": [
+        {
+          "id": "customer",
+          "name": "CUSTOMER",
+          "note": "Core customer record",
+          "fields": [
+            { "n": "ID",                   "t": "pk", "dt": "varchar",  "pi": false, "masked": false, "note": "Primary key — UUID" },
+            { "n": "LOCATION_ID",          "t": "fk", "dt": "varchar",  "pi": false, "masked": false, "note": "FK → LOCATION.ID" },
+            { "n": "DEFAULT_PAYMENT_TYPE", "t": "",   "dt": "varchar",  "pi": true,  "masked": false, "note": "Payment preference — PI" },
+            { "n": "PHONE",                "t": "",   "dt": "varchar",  "pi": true,  "masked": true,  "note": "Mobile number — PI, masked" },
+            { "n": "EMAIL",                "t": "",   "dt": "varchar",  "pi": true,  "masked": true,  "note": "Contact email — PI, masked" },
+            { "n": "FIRST_NAME",           "t": "",   "dt": "varchar",  "pi": true,  "masked": true  },
+            { "n": "LAST_NAME",            "t": "",   "dt": "varchar",  "pi": true,  "masked": true  },
+            { "n": "DATE_OF_BIRTH",        "t": "",   "dt": "date",     "pi": true,  "masked": true,  "note": "DOB — PI, masked" },
+            { "n": "CREATED_AT",           "t": "",   "dt": "datetime", "pi": false, "masked": false },
+            { "n": "UPDATED_AT",           "t": "",   "dt": "datetime", "pi": false, "masked": false },
+            { "n": "IS_ACTIVE",            "t": "",   "dt": "boolean",  "pi": false, "masked": false }
+          ]
+        },
+        {
+          "id": "order",
+          "name": "ORDER",
+          "note": "Individual customer order",
+          "fields": [
+            { "n": "ID",               "t": "pk", "dt": "varchar",  "pi": false, "masked": false, "note": "Primary key — UUID" },
+            { "n": "INVOICE_ID",       "t": "",   "dt": "varchar",  "pi": false, "masked": false },
+            { "n": "ORDER_DATE",       "t": "",   "dt": "datetime", "pi": false, "masked": false },
+            { "n": "ORDER_AMOUNT",     "t": "",   "dt": "float",    "pi": true,  "masked": true,  "note": "Total value — PI, masked in non-prod" },
+            { "n": "CUSTOMER_ID",      "t": "fk", "dt": "varchar",  "pi": false, "masked": false, "note": "FK → CUSTOMER.ID" },
+            { "n": "ITEM_ID",          "t": "",   "dt": "varchar",  "pi": false, "masked": false },
+            { "n": "STATUS",           "t": "",   "dt": "varchar",  "pi": false, "masked": false },
+            { "n": "SHIPPING_ADDRESS", "t": "",   "dt": "varchar",  "pi": true,  "masked": true,  "note": "Delivery address — PI, masked" },
+            { "n": "DISCOUNT_CODE",    "t": "",   "dt": "varchar",  "pi": false, "masked": false },
+            { "n": "CREATED_AT",       "t": "",   "dt": "datetime", "pi": false, "masked": false }
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "from": "customer",
+          "to": "order",
+          "fromCol": "ID",
+          "toCol": "CUSTOMER_ID",
+          "cardinality": "1:N"
+        }
+      ],
+      "layout": {
+        "customer": [60, 60],
+        "order":    [480, 60]
+      }
     }
   }
 }
