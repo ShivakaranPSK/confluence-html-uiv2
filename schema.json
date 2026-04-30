@@ -118,7 +118,7 @@
             { "n": "SF_ID",                   "t": "pk", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "UPDATED_AT",                   "t": "pk", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "UTC_DST_OFFSET",                   "t": "pk", "dt": "VARCHAR(10)",  "pi": false, "masked": false, "note": "" },
-            { "n": "UTC_OFFSET",                   "t": "pk", "dt": "VARCHAR(10)",  "pi": false, "masked": false, "note": "" },
+            { "n": "UTC_OFFSET",                   "t": "pk", "dt": "VARCHAR(10)",  "pi": false, "masked": false, "note": "" }
           ]
         },
         {
@@ -420,7 +420,6 @@
           "toCol": "COHORT_ID",
           "cardinality": "1:N"
         }
-
       ],
       "layout": {
         "GENR_GLOBAL_APPLICATION_STAGE": [60, 60],
