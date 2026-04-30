@@ -186,14 +186,14 @@ code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mo
 /* ════════════════════════════════════
    DRAWER
 ════════════════════════════════════ */
-#drawer{position:absolute;right:0;top:0;bottom:0;width:282px;background:var(--panel);border-left:1px solid var(--b2);z-index:20;transform:translateX(100%);transition:transform .25s var(--ease);display:flex;flex-direction:column;box-shadow:var(--sh-lg)}
+#drawer{position:absolute;right:0;top:0;bottom:0;width:300px;background:var(--panel);border-left:1px solid var(--b2);z-index:20;transform:translateX(100%);transition:transform .25s var(--ease);display:flex;flex-direction:column;box-shadow:var(--sh-lg)}
 #drawer.open{transform:translateX(0)}
 #drw-hdr{padding:15px 16px;border-bottom:1px solid var(--b2);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-shrink:0}
 #drw-name{font-size:14px;font-weight:700;word-break:break-all;line-height:1.3;letter-spacing:-.2px}
 #drw-sub{font-size:11px;color:var(--t2);margin-top:3px}
 #drw-close{background:var(--s2);border:1px solid var(--b3);color:var(--t2);font-size:13px;padding:4px 8px;cursor:pointer;border-radius:5px;flex-shrink:0}
 #drw-close:hover{color:var(--text);background:var(--s3)}
-#drw-body{overflow-y:auto;flex:1;padding:14px}
+#drw-body{overflow-y:scroll;flex:1;min-height:0;padding:14px;scrollbar-width:thin}
 .dsec{margin-bottom:16px}
 .dsec-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:8px}
 .dfield{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--surface);border:1px solid var(--b2);border-radius:7px;margin-bottom:3px;font-family:var(--mono);font-size:11px}
@@ -435,8 +435,15 @@ async function loadSchema(manual=false){
       Object.keys(dom.layout).filter(k=>!ids.has(k)).forEach(k=>{console.warn(`ERD: stale layout key "${k}" ignored`);delete dom.layout[k];});
       const missing=tables.filter(t=>!dom.layout[t.id]);
       if(missing.length){
-        const C=Math.max(2,Math.ceil(Math.sqrt(tables.length)));
-        missing.forEach((t,i)=>{const idx=tables.filter(t2=>dom.layout[t2.id]).length+i;dom.layout[t.id]=[50+(idx%C)*380,50+Math.floor(idx/C)*300];});
+        // Use smart layered layout for the whole domain if many are missing
+        if(missing.length > tables.length / 2){
+          // Defer to autoLayout after data is set — flag for post-load
+          dom._needsAutoLayout = true;
+        } else {
+          // Just place the few missing ones in a row below existing tables
+          const C=Math.max(2,Math.ceil(Math.sqrt(tables.length)));
+          missing.forEach((t,i)=>{const idx=tables.filter(t2=>dom.layout[t2.id]).length+i;dom.layout[t.id]=[50+(idx%C)*380,50+Math.floor(idx/C)*300];});
+        }
       }
     });
     data=raw;domain=Object.keys(raw.domains)[0];
@@ -444,7 +451,11 @@ async function loadSchema(manual=false){
     document.getElementById('empty').classList.add('hidden');
     document.title=raw.title?`${raw.title} — ERD Studio`:'ERD Studio';
     document.getElementById('vtitle-sub').textContent=raw.title?`— ${raw.title}`:'';
-    buildPills();renderERD();setTimeout(fitView,60);
+    buildPills();renderERD();
+    // Auto-layout domains that had no/bad layout data
+    const needsLayout=Object.keys(raw.domains).some(k=>raw.domains[k]._needsAutoLayout);
+    if(needsLayout){ setTimeout(()=>{autoLayout();},80); }
+    else { setTimeout(fitView,60); }
     const meta=[];
     if(raw.updatedAt)meta.push(`Updated ${raw.updatedAt}`);
     if(raw.updatedBy)meta.push(`by ${raw.updatedBy}`);
@@ -513,7 +524,7 @@ function renderERD(){
   const layout=d.layout||{},tables=d.tables||[],edges=d.edges||[];
   const color=d.color||css('--accent');
   const cardBg=css('--surface');
-  const inactiveLine=isDark?'rgba(110,110,135,0.18)':'rgba(90,90,115,0.18)';
+  const inactiveLine=isDark?'rgba(140,140,175,0.45)':'rgba(80,80,120,0.30)';
 
   // Arrowhead
   const defs=S('defs');
@@ -536,7 +547,7 @@ function renderERD(){
     const glowPath=S('path',{d:pd,fill:'none',stroke:color,'stroke-width':8,opacity:.07,'stroke-linecap':'round',display:'none'});
     g.appendChild(glowPath);
     const hit=S('path',{d:pd,fill:'none',stroke:'transparent','stroke-width':16});g.appendChild(hit);
-    const linePath=S('path',{d:pd,fill:'none',stroke:active?color:inactiveLine,'stroke-width':active?1.8:1,'stroke-dasharray':active?'none':'6 4','stroke-linecap':'round','marker-end':'url(#arr)'});
+    const linePath=S('path',{d:pd,fill:'none',stroke:active?color:inactiveLine,'stroke-width':active?2:1.2,'stroke-dasharray':'none','stroke-linecap':'round','marker-end':'url(#arr)'});
     g.appendChild(linePath);
 
     // Label card
@@ -590,7 +601,7 @@ function renderERD(){
     }
     g.appendChild(labelG);
     hit.addEventListener('mouseenter',()=>{labelG.setAttribute('display','block');glowPath.setAttribute('display','block');linePath.setAttribute('stroke',color);linePath.setAttribute('stroke-width','2');linePath.removeAttribute('stroke-dasharray');});
-    hit.addEventListener('mouseleave',()=>{labelG.setAttribute('display','none');glowPath.setAttribute('display','none');if(!active){linePath.setAttribute('stroke',inactiveLine);linePath.setAttribute('stroke-width','1');linePath.setAttribute('stroke-dasharray','6 4');}});
+    hit.addEventListener('mouseleave',()=>{labelG.setAttribute('display','none');glowPath.setAttribute('display','none');if(!active){linePath.setAttribute('stroke',inactiveLine);linePath.setAttribute('stroke-width','1.2');linePath.removeAttribute('stroke-dasharray');}});
     gE.appendChild(g);
   });
 
@@ -718,12 +729,63 @@ function fitView(){
   applyTransform();
 }
 function autoLayout(){
-  if(!data||!domain)return;
-  const d=data.domains[domain],tables=d.tables||[];
-  const C=Math.max(2,Math.ceil(Math.sqrt(tables.length)));
+  if(!data||!domain) return;
+  const d=data.domains[domain],tables=d.tables||[],edges=(d.edges||[]).map(ED);
+  if(!tables.length) return;
+  const ids=tables.map(t=>t.id);
+
+  // Build adjacency maps
+  const out={},inc={};
+  ids.forEach(id=>{out[id]=[];inc[id]=[];});
+  edges.forEach(e=>{
+    if(out[e.from]) out[e.from].push(e.to);
+    if(inc[e.to])   inc[e.to].push(e.from);
+  });
+
+  // Assign layers via BFS — roots (no incoming) start at layer 0
+  const layer={};
+  ids.forEach(id=>{ if(inc[id].length===0) layer[id]=0; });
+  // Tables with no edges also start at 0
+  ids.forEach(id=>{ if(layer[id]===undefined) layer[id]=0; });
+  const queue=ids.filter(id=>layer[id]===0);
+  let head=0;
+  while(head<queue.length){
+    const id=queue[head++];
+    out[id].forEach(next=>{
+      if(layer[next]===undefined||layer[next]<=layer[id]){
+        layer[next]=(layer[id]||0)+1;
+        queue.push(next);
+      }
+    });
+  }
+
+  // Group by layer
+  const byLayer={};
+  ids.forEach(id=>{
+    const l=layer[id]||0;
+    (byLayer[l]=byLayer[l]||[]).push(id);
+  });
+
+  const H_GAP=80, V_GAP=32;
   const layout={};
-  tables.forEach((t,i)=>{layout[t.id]=[50+(i%C)*(TW(t)+70),50+Math.floor(i/C)*300];});
-  d.layout=layout;renderERD();setTimeout(fitView,30);toast('⟲ Auto-layout applied');
+  const layerNums=Object.keys(byLayer).map(Number).sort((a,b)=>a-b);
+  let curX=60;
+  layerNums.forEach(l=>{
+    const tableIds=byLayer[l];
+    const maxW=Math.max(...tableIds.map(id=>{const t=tables.find(t=>t.id===id);return t?TW(t):250;}));
+    let curY=60;
+    tableIds.forEach(id=>{
+      layout[id]=[curX,curY];
+      const t=tables.find(t=>t.id===id);
+      curY+=(t?TH(t):200)+V_GAP;
+    });
+    curX+=maxW+H_GAP;
+  });
+
+  d.layout=layout;
+  renderERD();
+  setTimeout(fitView,30);
+  toast('⟲ Smart layout applied');
 }
 
 // ══ TOOLTIP ══════════════════════════════════
