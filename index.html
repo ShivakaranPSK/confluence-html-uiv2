@@ -40,11 +40,15 @@
   --tshadow: rgba(0,0,0,0.10);
 }
 :root {
-  --accent:#6366f1; --accent-h:#818cf8; --accent-bg:rgba(99,102,241,0.10); --accent-ring:rgba(99,102,241,0.35);
-  --pk:#7c3aed; --pk-bg:rgba(124,58,237,0.11); --pk-t:#c4b5fd;
-  --fk:#0d9488; --fk-bg:rgba(13,148,136,0.11); --fk-t:#5eead4;
-  --pi:#dc2626; --pi-bg:rgba(220,38,38,0.10);  --pi-t:#fca5a5;
-  --mx:#d97706; --mx-bg:rgba(217,119,6,0.10);  --mx-t:#fcd34d;
+  --accent:#6366f1; --accent-h:#818cf8; --accent-bg:rgba(99,102,241,0.10); --accent-ring:rgba(99,102,241,0.40);
+  /* PK — violet/purple: clearly "primary" */
+  --pk:#7c3aed; --pk-bg:rgba(124,58,237,0.14); --pk-t:#c4b5fd;
+  /* FK — teal/cyan: "references" something */
+  --fk:#0891b2; --fk-bg:rgba(8,145,178,0.13); --fk-t:#67e8f9;
+  /* PI — rose red: sensitive personal data */
+  --pi:#e11d48; --pi-bg:rgba(225,29,72,0.12);  --pi-t:#fda4af;
+  /* Masked — amber: partially hidden */
+  --mx:#d97706; --mx-bg:rgba(217,119,6,0.12);  --mx-t:#fcd34d;
   --ok:#22c55e; --err:#ef4444; --warn:#f59e0b;
 }
 
@@ -498,11 +502,12 @@ const S=(tag,a={})=>{const e=document.createElementNS(NS,tag);Object.entries(a).
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
 function rowStyle(f){
-  if(f.t==='pk')return{bg:'var(--pk-bg)',fg:'var(--pk-t)'};
-  if(f.t==='fk')return{bg:'var(--fk-bg)',fg:'var(--fk-t)'};
-  if(f.pi&&f.masked)return{bg:'var(--mx-bg)',fg:'var(--mx-t)'};
-  if(f.pi)return{bg:'var(--pi-bg)',fg:'var(--pi-t)'};
-  return{bg:'transparent',fg:'var(--t2)'};
+  if(f.t==='pk') return{bg:'rgba(124,58,237,0.10)',  fg:'#c4b5fd'};
+  if(f.t==='fk') return{bg:'rgba(8,145,178,0.10)',   fg:'#67e8f9'};
+  if(f.pi&&f.masked) return{bg:'rgba(217,119,6,0.09)',fg:'#fcd34d'};
+  if(f.pi)       return{bg:'rgba(225,29,72,0.09)',    fg:'#fda4af'};
+  // Regular column — readable light text, no background tint
+  return{bg:'transparent', fg:'rgba(210,210,228,0.92)'};
 }
 function tagBadges(f){const b=[];if(f.t==='pk')b.push({l:'PK',bg:'var(--pk-bg)',fg:'var(--pk-t)'});if(f.t==='fk')b.push({l:'FK',bg:'var(--fk-bg)',fg:'var(--fk-t)'});if(f.pi)b.push({l:'PI',bg:'var(--pi-bg)',fg:'var(--pi-t)'});if(f.masked)b.push({l:'M',bg:'var(--mx-bg)',fg:'var(--mx-t)'});return b;}
 
@@ -705,79 +710,168 @@ function renderERD(){
     const cpId=`cp-${table.id}`;
     const cp=S('clipPath',{id:cpId});cp.appendChild(S('rect',{x:x+1,y,width:tw-2,height:h}));g.appendChild(cp);
 
-    // Soft drop shadow
-    g.appendChild(S('rect',{x:x+2,y:y+5,width:tw-2,height:h,rx:10,fill:'var(--tshadow)',opacity:isDark?'1':'0.6',style:'filter:blur(10px)'}));
+    // ── CARD SHADOW (layered for depth) ──
+    // Outer ambient shadow
+    g.appendChild(S('rect',{x:x+1,y:y+8,width:tw,height:h,rx:12,
+      fill:isDark?'rgba(0,0,0,0.6)':'rgba(0,0,0,0.08)',
+      style:'filter:blur(16px)'}));
+    // Close contact shadow
+    g.appendChild(S('rect',{x:x+2,y:y+3,width:tw-2,height:h,rx:11,
+      fill:isDark?'rgba(0,0,0,0.4)':'rgba(0,0,0,0.05)',
+      style:'filter:blur(4px)'}));
 
-    // Card body
-    g.appendChild(S('rect',{x,y,width:tw,height:h,rx:10,fill:'var(--surface)',stroke:isSel?color:'var(--b3)','stroke-width':isSel?1.5:0.8}));
+    // ── CARD BODY ──
+    // Subtle gradient effect via two rects
+    const bodyFill = isDark ? '#1e1e28' : '#ffffff';
+    g.appendChild(S('rect',{x,y,width:tw,height:h,rx:11,
+      fill:bodyFill,
+      stroke:isSel ? color : isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
+      'stroke-width': isSel ? 1.5 : 1}));
+
+    // Inner highlight on top edge (gives glass-like depth)
+    g.appendChild(S('rect',{x:x+1,y:y+1,width:tw-2,height:2,rx:11,
+      fill:isDark?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.9)'}));
 
     // Selected glow ring
-    if(isSel){g.appendChild(S('rect',{x:x-2,y:y-2,width:tw+4,height:h+4,rx:12,fill:'none',stroke:color,'stroke-width':1.5,opacity:.35}));}
+    if(isSel){
+      g.appendChild(S('rect',{x:x-2,y:y-2,width:tw+4,height:h+4,rx:13,
+        fill:'none',stroke:color,'stroke-width':2,opacity:.4}));
+    }
 
-    // Header — solid fill, no texture
-    g.appendChild(S('rect',{x,y,width:tw,height:TH_HEAD,rx:10,fill:color}));
-    g.appendChild(S('rect',{x,y:y+TH_HEAD-10,width:tw,height:10,fill:color}));
+    // ── HEADER ──
+    // Gradient header: solid colour with slightly lighter top strip
+    // Use a defs gradient for each table
+    const gradId=`hg-${table.id}`;
+    const defs2=document.getElementById('erd-svg').querySelector('defs');
+    if(defs2){
+      const lg=S('linearGradient',{id:gradId,x1:'0',y1:'0',x2:'0',y2:'1'});
+      // Lighten top of header by ~15%
+      const lighten=(hex,amt)=>{
+        const c=parseInt(hex.slice(1),16);
+        const r=Math.min(255,((c>>16)&0xff)+amt);
+        const g_=Math.min(255,((c>>8)&0xff)+amt);
+        const b_=Math.min(255,(c&0xff)+amt);
+        return `#${((1<<24)|(r<<16)|(g_<<8)|b_).toString(16).slice(1)}`;
+      };
+      const c1=lighten(color.startsWith('#')?color:'#6366f1',28);
+      const c2=color;
+      const s1=S('stop',{'offset':'0%','stop-color':c1});
+      const s2=S('stop',{'offset':'100%','stop-color':c2});
+      lg.appendChild(s1);lg.appendChild(s2);
+      defs2.appendChild(lg);
+    }
+    g.appendChild(S('rect',{x,y,width:tw,height:TH_HEAD,rx:11,
+      fill:`url(#${gradId})`}));
+    // Square off bottom corners of header
+    g.appendChild(S('rect',{x,y:y+TH_HEAD-11,width:tw,height:11,
+      fill:color}));
+    // Subtle inner top highlight on header
+    g.appendChild(S('rect',{x:x+1,y:y+1,width:tw-2,height:1.5,rx:10,
+      fill:'rgba(255,255,255,0.22)'}));
 
-    // Table name — strictly clipped to leave room for pill
-    // Pill sits at right edge; name must end before it
-    const pilW=Math.max(42, (`${total} col${total!==1?'s':''}`).length*5.5+14);
-    const nameMaxPx = tw - PAD*2 - pilW - 10; // 10px gap between name and pill
+    // ── TABLE NAME ──
+    const pilW=Math.max(46, (`${total} col${total!==1?'s':''}`).length*5.6+14);
+    const nameMaxPx = tw - PAD*2 - pilW - 12;
     const nameMaxChars = Math.max(4, Math.floor(nameMaxPx / CH_HDR));
     const nameDisplay = table.name.length > nameMaxChars
       ? table.name.slice(0, nameMaxChars-1)+'…'
       : table.name;
-    // Clip path for header name so it can never bleed into pill zone
     const hdrClipId=`hc-${table.id}`;
     const hdrClip=S('clipPath',{id:hdrClipId});
     hdrClip.appendChild(S('rect',{x:x+PAD,y,width:nameMaxPx,height:TH_HEAD}));
     g.appendChild(hdrClip);
     const nt=S('text',{x:x+PAD,y:y+TH_HEAD/2+1,'dominant-baseline':'central',
-      fill:'rgba(255,255,255,0.95)',fontSize:11,fontWeight:700,
-      fontFamily:"'Inter',sans-serif",'letter-spacing':'0.1',
+      fill:'rgba(255,255,255,0.97)',fontSize:11,fontWeight:700,
+      fontFamily:"'Inter',sans-serif",'letter-spacing':'0.2',
       'clip-path':`url(#${hdrClipId})`});
     nt.textContent=nameDisplay;g.appendChild(nt);
 
-    // Col count pill — always right-aligned, never moves
+    // ── COL COUNT PILL ──
     const cl=`${total} col${total!==1?'s':''}`;
-    const pw=Math.max(42,cl.length*5.5+14);
-    const px2=x+tw-PAD-pw,py2=y+TH_HEAD/2-9;
-    g.appendChild(S('rect',{x:px2,y:py2,width:pw,height:18,rx:9,fill:'rgba(0,0,0,0.25)'}));
+    const pw=Math.max(46,cl.length*5.6+14);
+    const px2=x+tw-PAD-pw, py2=y+TH_HEAD/2-9;
+    g.appendChild(S('rect',{x:px2,y:py2,width:pw,height:18,rx:9,
+      fill:'rgba(0,0,0,0.30)'}));
     const pt=S('text',{x:px2+pw/2,y:py2+9,'text-anchor':'middle','dominant-baseline':'central',
-      fill:'rgba(255,255,255,0.8)',fontSize:8.5,fontFamily:"'Inter',sans-serif",'font-weight':'600'});
+      fill:'rgba(255,255,255,0.82)',fontSize:8.5,
+      fontFamily:"'Inter',sans-serif",'font-weight':'600','letter-spacing':'0.2'});
     pt.textContent=cl;g.appendChild(pt);
 
+    // ── FIELD ROWS ──
     fields.slice(0,visCount).forEach((f,i)=>{
-      const fy=y+TH_HEAD+i*TH_ROW+2,st=rowStyle(f);
-      if(st.bg!=='transparent')g.appendChild(S('rect',{x:x+1,y:fy,width:tw-2,height:TH_ROW,fill:st.bg}));
+      const fy=y+TH_HEAD+i*TH_ROW+2;
+      const st=rowStyle(f);
+      const isLastVisible = i===visCount-1;
+      const isAlternate = i%2===1; // zebra striping for non-highlighted rows
 
-      const bdgs=tagBadges(f);let tx=x+tw-8;const by_=fy+(TH_ROW-15)/2;
+      // Row background
+      if(st.bg!=='transparent'){
+        g.appendChild(S('rect',{x:x+1,y:fy,width:tw-2,height:TH_ROW,fill:st.bg}));
+      } else if(isAlternate){
+        // Subtle zebra stripe
+        g.appendChild(S('rect',{x:x+1,y:fy,width:tw-2,height:TH_ROW,
+          fill:isDark?'rgba(255,255,255,0.018)':'rgba(0,0,0,0.018)'}));
+      }
+
+      // ── BADGES (right-aligned) ──
+      const bdgs=tagBadges(f);let tx=x+tw-10;
+      const badgeY=fy+(TH_ROW-14)/2;
       bdgs.forEach(b=>{
         const bwidth=bw(b.l);tx-=bwidth+3;
-        g.appendChild(S('rect',{x:tx,y:by_,width:bwidth,height:15,rx:4,fill:b.bg}));
-        const bt=S('text',{x:tx+bwidth/2,y:by_+7.5,'text-anchor':'middle','dominant-baseline':'central',fill:b.fg,fontSize:8.5,fontWeight:700,fontFamily:"'Inter',sans-serif",'letter-spacing':'.3'});
+        g.appendChild(S('rect',{x:tx,y:badgeY,width:bwidth,height:14,rx:4,fill:b.bg}));
+        const bt=S('text',{x:tx+bwidth/2,y:badgeY+7,'text-anchor':'middle','dominant-baseline':'central',
+          fill:b.fg,fontSize:8.5,fontWeight:700,
+          fontFamily:"'Inter',sans-serif",'letter-spacing':'0.4'});
         bt.textContent=b.l;g.appendChild(bt);
       });
-      const re=bdgs.length?tx-6:x+tw-PAD;
-      const ncId=`nc-${table.id}-${i}`;
-      const nc=S('clipPath',{id:ncId});nc.appendChild(S('rect',{x:x+PAD,y:fy,width:re-x-PAD,height:TH_ROW}));g.appendChild(nc);
+      const re=bdgs.length?tx-7:x+tw-PAD;
 
-      // Column name — JetBrains Mono, bold
-      const ft=S('text',{x:x+PAD,y:fy+L1,'dominant-baseline':'central',fill:st.fg,fontSize:10.5,fontWeight:600,fontFamily:"'JetBrains Mono',monospace",'clip-path':`url(#${ncId})`});
+      // ── TEXT CLIP ──
+      const ncId=`nc-${table.id}-${i}`;
+      const nc=S('clipPath',{id:ncId});
+      nc.appendChild(S('rect',{x:x+PAD,y:fy,width:Math.max(0,re-x-PAD),height:TH_ROW}));
+      g.appendChild(nc);
+
+      // ── COLUMN NAME (line 1) ──
+      // Colour logic: PK=purple, FK=teal, PI=red, masked=amber, regular=bright white
+      const nameFill = st.fg;
+      const ft=S('text',{x:x+PAD,y:fy+L1,'dominant-baseline':'central',
+        fill:nameFill,fontSize:10.5,fontWeight:600,
+        fontFamily:"'JetBrains Mono',monospace",
+        'clip-path':`url(#${ncId})`});
       ft.textContent=f.n;g.appendChild(ft);
 
-      // Datatype — smaller, muted
+      // ── DATATYPE (line 2) — muted, italic style ──
       if(f.dt){
-        const dty=S('text',{x:x+PAD,y:fy+L2,'dominant-baseline':'central',fill:'var(--t3)',fontSize:9,fontFamily:"'JetBrains Mono',monospace",'clip-path':`url(#${ncId})`});
+        const dtFill = isDark ? 'rgba(120,120,145,0.75)' : 'rgba(90,90,115,0.65)';
+        const dty=S('text',{x:x+PAD,y:fy+L2,'dominant-baseline':'central',
+          fill:dtFill,fontSize:8.5,
+          fontFamily:"'JetBrains Mono',monospace",
+          'font-style':'italic',
+          'clip-path':`url(#${ncId})`});
         dty.textContent=f.dt;g.appendChild(dty);
       }
-      if(i<visCount-1||showTgl)g.appendChild(S('line',{x1:x+1,y1:fy+TH_ROW,x2:x+tw-1,y2:fy+TH_ROW,stroke:'var(--b1)','stroke-width':0.5}));
+
+      // ── ROW DIVIDER ──
+      if(!isLastVisible||showTgl){
+        const divFill = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+        g.appendChild(S('line',{x1:x+PAD,y1:fy+TH_ROW,x2:x+tw-PAD,y2:fy+TH_ROW,
+          stroke:divFill,'stroke-width':0.7}));
+      }
     });
 
+    // ── EXPAND / COLLAPSE TOGGLE ──
     if(showTgl){
       const ty=y+TH_HEAD+visCount*TH_ROW+2,hidden=total-visCount;
-      g.appendChild(S('rect',{x:x+1,y:ty,width:tw-2,height:TH_EXP-2,fill:'var(--s2)'}));
-      const label=collapsed?`▾  Show ${hidden} more column${hidden!==1?'s':''}…`:'▴  Show less';
-      const tl=S('text',{x:x+tw/2,y:ty+TH_EXP/2,'text-anchor':'middle','dominant-baseline':'central',fill:'var(--accent-h)',fontSize:9.5,fontWeight:500,fontFamily:"'Inter',sans-serif"});
+      const toggleBg = isDark ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.035)';
+      g.appendChild(S('rect',{x:x+1,y:ty,width:tw-2,height:TH_EXP-2,fill:toggleBg}));
+      // Divider above toggle
+      g.appendChild(S('line',{x1:x+PAD,y1:ty,x2:x+tw-PAD,y2:ty,
+        stroke:isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)','stroke-width':0.7}));
+      const label=collapsed?`▾  Show ${hidden} more…`:'▴  Show less';
+      const tl=S('text',{x:x+tw/2,y:ty+TH_EXP/2,'text-anchor':'middle','dominant-baseline':'central',
+        fill:color,fontSize:9.5,fontWeight:500,
+        fontFamily:"'Inter',sans-serif",'letter-spacing':'0.1'});
       tl.textContent=label;g.appendChild(tl);
       const th=S('rect',{x:x+1,y:ty,width:tw-2,height:TH_EXP-2,fill:'transparent',style:'cursor:pointer'});
       th.onclick=ev=>{ev.stopPropagation();expandedTables[table.id]=!isExp;renderERD();};g.appendChild(th);
