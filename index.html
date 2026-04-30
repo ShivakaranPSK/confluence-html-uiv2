@@ -441,6 +441,7 @@ function TW(t){
   return Math.max(220, Math.min(520, Math.ceil(Math.max(mx, hdrW))));
 }
 function TH(t){const tot=(t.fields||[]).length,exp=!!expandedTables[t.id],vis=(!exp&&tot>COLLAPSE_AT)?PREVIEW:tot;return TH_HEAD+vis*TH_ROW+(tot>COLLAPSE_AT?TH_EXP:4);}
+function ED(e){
   if(Array.isArray(e))return{from:e[0],to:e[1],label:e[2]||'',cardinality:'1:N',fromCol:'',toCol:''};
   const r=Object.assign({cardinality:'1:N',fromCol:'',toCol:'',label:''},e);
   if(r.fromCol&&r.toCol&&!r.label)r.label=`${r.fromCol} = ${r.toCol}`;
