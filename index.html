@@ -54,7 +54,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased}
 button{font-family:var(--font);cursor:pointer}
-#app{display:flex;flex-direction:column;height:100vh}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
 /* smooth theme transitions — only colour properties */
 body,#toolbar,#statusbar,#legend,#guide,#drawer,#tip,#minimap,#toast,
@@ -128,20 +128,51 @@ body,#toolbar,#statusbar,#legend,#guide,#drawer,#tip,#minimap,#toast,
 #theme-btn:hover{background:var(--s3);color:var(--text);border-color:var(--b4)}
 
 /* ════════════════════════════════════
-   CANVAS
+   CANVAS WRAP — holds canvas + legend + drawer
 ════════════════════════════════════ */
-#canvas{
-  flex:1;overflow:hidden;position:relative;cursor:grab;user-select:none;
-  background:var(--bg);
-  background-image:radial-gradient(circle,var(--canvas-dot) 1px,transparent 1px);
-  background-size:24px 24px;
-}
+#canvas-wrap{position:relative;display:flex;flex-direction:column;flex:1;overflow:hidden}
+#canvas{flex:1;overflow:hidden;position:relative;cursor:grab;user-select:none;background:var(--bg);background-image:radial-gradient(circle,var(--canvas-dot) 1px,transparent 1px);background-size:24px 24px;}
 #canvas.grabbing{cursor:grabbing}
 #erd-svg{position:absolute;top:0;left:0;overflow:visible}
 
 /* ════════════════════════════════════
-   EMPTY STATE
+   DRAWER — positioned on canvas-wrap so it spans canvas+legend
 ════════════════════════════════════ */
+#drawer{
+  position:absolute;right:0;top:0;bottom:0;
+  width:320px;
+  background:var(--panel);
+  border-left:1px solid var(--b2);
+  z-index:30;
+  transform:translateX(100%);
+  transition:transform .25s var(--ease);
+  display:flex;flex-direction:column;
+  box-shadow:var(--sh-lg);
+}
+#drawer.open{transform:translateX(0)}
+#drw-hdr{
+  padding:16px;border-bottom:1px solid var(--b2);
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:8px;flex-shrink:0;
+}
+#drw-name{font-size:13px;font-weight:700;word-break:break-word;line-height:1.4;letter-spacing:-.2px;font-family:var(--mono)}
+#drw-sub{font-size:11px;color:var(--t2);margin-top:4px}
+#drw-close{
+  background:var(--s2);border:1px solid var(--b3);color:var(--t2);
+  font-size:13px;padding:4px 8px;cursor:pointer;border-radius:5px;flex-shrink:0;
+  line-height:1;
+}
+#drw-close:hover{color:var(--text);background:var(--s3)}
+/* THE FIX: explicit height + overflow-y on its own scroll container */
+#drw-body{
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:14px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--b3) transparent;
+}
 #empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;pointer-events:none}
 #empty.hidden{display:none}
 .ei{width:58px;height:58px;background:var(--s2);border:1px solid var(--b3);border-radius:14px;display:flex;align-items:center;justify-content:center;opacity:.45}
@@ -184,16 +215,8 @@ code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mo
 #leg-lbl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.7px}
 
 /* ════════════════════════════════════
-   DRAWER
+   EMPTY STATE
 ════════════════════════════════════ */
-#drawer{position:absolute;right:0;top:0;bottom:0;width:300px;background:var(--panel);border-left:1px solid var(--b2);z-index:20;transform:translateX(100%);transition:transform .25s var(--ease);display:flex;flex-direction:column;box-shadow:var(--sh-lg)}
-#drawer.open{transform:translateX(0)}
-#drw-hdr{padding:15px 16px;border-bottom:1px solid var(--b2);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-shrink:0}
-#drw-name{font-size:14px;font-weight:700;word-break:break-all;line-height:1.3;letter-spacing:-.2px}
-#drw-sub{font-size:11px;color:var(--t2);margin-top:3px}
-#drw-close{background:var(--s2);border:1px solid var(--b3);color:var(--t2);font-size:13px;padding:4px 8px;cursor:pointer;border-radius:5px;flex-shrink:0}
-#drw-close:hover{color:var(--text);background:var(--s3)}
-#drw-body{overflow-y:scroll;flex:1;min-height:0;padding:14px;scrollbar-width:thin}
 .dsec{margin-bottom:16px}
 .dsec-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:8px}
 .dfield{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--surface);border:1px solid var(--b2);border-radius:7px;margin-bottom:3px;font-family:var(--mono);font-size:11px}
@@ -339,6 +362,7 @@ code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mo
 </div>
 
 <!-- CANVAS -->
+<div id="canvas-wrap" style="flex:1;position:relative;display:flex;flex-direction:column;overflow:hidden">
 <div id="canvas"
   onmousedown="panStart(event)" onmousemove="panMove(event)"
   onmouseup="panEnd()" onmouseleave="panEnd()" onwheel="onWheel(event)">
@@ -347,13 +371,6 @@ code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mo
     <div class="ei"><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 32 32"><rect x="2" y="3" width="11" height="9" rx="2"/><rect x="19" y="3" width="11" height="9" rx="2"/><rect x="2" y="20" width="11" height="9" rx="2"/><rect x="19" y="20" width="11" height="9" rx="2"/><line x1="7.5" y1="12" x2="7.5" y2="16"/><line x1="24.5" y1="12" x2="24.5" y2="16"/><line x1="7.5" y1="16" x2="24.5" y2="16"/></svg></div>
     <div class="et">Loading diagram…</div>
     <div class="es">Fetching schema.json from the repository</div>
-  </div>
-  <div id="drawer">
-    <div id="drw-hdr">
-      <div><div id="drw-name"></div><div id="drw-sub"></div></div>
-      <button id="drw-close" onclick="closeDrawer()">✕</button>
-    </div>
-    <div id="drw-body"></div>
   </div>
   <div id="minimap">
     <canvas id="mm-canvas" width="160" height="96"></canvas>
@@ -369,6 +386,15 @@ code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mo
   <div class="leg"><div class="lsw" style="background:var(--pi-bg);border:1px solid var(--pi-t)"></div>PI — Personal info</div>
   <div class="leg"><div class="lsw" style="background:var(--mx-bg);border:1px solid var(--mx-t)"></div>Masked</div>
   <div class="leg" style="gap:6px"><svg width="26" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="var(--accent)" stroke-width="1.8"/><polygon points="18,2 26,5 18,8" fill="var(--accent)"/></svg>Relationship</div>
+</div>
+
+<!-- DRAWER — outside canvas so overflow:hidden doesn't clip it -->
+<div id="drawer">
+  <div id="drw-hdr">
+    <div><div id="drw-name"></div><div id="drw-sub"></div></div>
+    <button id="drw-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div id="drw-body"></div>
 </div>
 </div>
 
@@ -395,13 +421,26 @@ const expandedTables={};
 // ══ LAYOUT CONSTANTS ═════════════════════════
 const COLLAPSE_AT=4,PREVIEW=3;
 const TH_HEAD=38,TH_ROW=34,TH_EXP=28;
-const L1=11,L2=24,CH_N=7.6,CH_D=5.8,PAD=14;
+const L1=11,L2=24,PAD=14;
+const CH_N=8.4;   // JetBrains Mono bold 10.5px — measured, not estimated
+const CH_D=6.2;   // JetBrains Mono regular 9px
+const CH_HDR=7.8; // Inter bold 11px (header name)
+const PILL_W=56;  // fixed pill width reservation in header (e.g. "108 cols" worst case)
 
 function bw(l){return l.length*6+11;}
 function totalBW(f){let w=0;if(f.t==='pk')w+=bw('PK')+3;if(f.t==='fk')w+=bw('FK')+3;if(f.pi)w+=bw('PI')+3;if(f.masked)w+=bw('M')+3;return w>0?w-3:0;}
-function TW(t){let mx=0;(t.fields||[]).forEach(f=>{const B=totalBW(f)+(totalBW(f)>0?10:0);mx=Math.max(mx,Math.max((f.n||'').length*CH_N,(f.dt||'').length*CH_D)+B+PAD*2);});return Math.max(210,Math.min(480,Math.ceil(Math.max(mx,(t.name||'').length*CH_N+PAD*2+64))));}
+function TW(t){
+  let mx=0;
+  (t.fields||[]).forEach(f=>{
+    const B=totalBW(f)+(totalBW(f)>0?10:0);
+    // name and datatype are stacked — width is max of both + badge zone + padding
+    mx=Math.max(mx, Math.max((f.n||'').length*CH_N, (f.dt||'').length*CH_D) + B + PAD*2);
+  });
+  // Header: table name + reserved pill space — must fit without overlap
+  const hdrW = (t.name||'').length*CH_HDR + PAD*2 + PILL_W + 12;
+  return Math.max(220, Math.min(520, Math.ceil(Math.max(mx, hdrW))));
+}
 function TH(t){const tot=(t.fields||[]).length,exp=!!expandedTables[t.id],vis=(!exp&&tot>COLLAPSE_AT)?PREVIEW:tot;return TH_HEAD+vis*TH_ROW+(tot>COLLAPSE_AT?TH_EXP:4);}
-function ED(e){
   if(Array.isArray(e))return{from:e[0],to:e[1],label:e[2]||'',cardinality:'1:N',fromCol:'',toCol:''};
   const r=Object.assign({cardinality:'1:N',fromCol:'',toCol:'',label:''},e);
   if(r.fromCol&&r.toCol&&!r.label)r.label=`${r.fromCol} = ${r.toCol}`;
@@ -632,16 +671,32 @@ function renderERD(){
     g.appendChild(S('rect',{x,y,width:tw,height:TH_HEAD,rx:10,fill:color}));
     g.appendChild(S('rect',{x,y:y+TH_HEAD-10,width:tw,height:10,fill:color}));
 
-    // Table name — Inter font, white
-    const maxHC=Math.floor((tw-PAD*2-70)/CH_N);
-    const nt=S('text',{x:x+PAD,y:y+TH_HEAD/2+1,'dominant-baseline':'central',fill:'rgba(255,255,255,0.95)',fontSize:11,fontWeight:700,fontFamily:"'Inter',sans-serif",'letter-spacing':'0.1'});
-    nt.textContent=table.name.length>maxHC?table.name.slice(0,maxHC-1)+'…':table.name;g.appendChild(nt);
+    // Table name — strictly clipped to leave room for pill
+    // Pill sits at right edge; name must end before it
+    const pilW=Math.max(42, (`${total} col${total!==1?'s':''}`).length*5.5+14);
+    const nameMaxPx = tw - PAD*2 - pilW - 10; // 10px gap between name and pill
+    const nameMaxChars = Math.max(4, Math.floor(nameMaxPx / CH_HDR));
+    const nameDisplay = table.name.length > nameMaxChars
+      ? table.name.slice(0, nameMaxChars-1)+'…'
+      : table.name;
+    // Clip path for header name so it can never bleed into pill zone
+    const hdrClipId=`hc-${table.id}`;
+    const hdrClip=S('clipPath',{id:hdrClipId});
+    hdrClip.appendChild(S('rect',{x:x+PAD,y,width:nameMaxPx,height:TH_HEAD}));
+    g.appendChild(hdrClip);
+    const nt=S('text',{x:x+PAD,y:y+TH_HEAD/2+1,'dominant-baseline':'central',
+      fill:'rgba(255,255,255,0.95)',fontSize:11,fontWeight:700,
+      fontFamily:"'Inter',sans-serif",'letter-spacing':'0.1',
+      'clip-path':`url(#${hdrClipId})`});
+    nt.textContent=nameDisplay;g.appendChild(nt);
 
-    // Col count pill
+    // Col count pill — always right-aligned, never moves
     const cl=`${total} col${total!==1?'s':''}`;
-    const pw=cl.length*5.5+12,px2=x+tw-PAD-pw,py2=y+TH_HEAD/2-9;
-    g.appendChild(S('rect',{x:px2,y:py2,width:pw,height:18,rx:9,fill:'rgba(0,0,0,0.2)'}));
-    const pt=S('text',{x:px2+pw/2,y:py2+9,'text-anchor':'middle','dominant-baseline':'central',fill:'rgba(255,255,255,0.72)',fontSize:8.5,fontFamily:"'Inter',sans-serif",'font-weight':'500'});
+    const pw=Math.max(42,cl.length*5.5+14);
+    const px2=x+tw-PAD-pw,py2=y+TH_HEAD/2-9;
+    g.appendChild(S('rect',{x:px2,y:py2,width:pw,height:18,rx:9,fill:'rgba(0,0,0,0.25)'}));
+    const pt=S('text',{x:px2+pw/2,y:py2+9,'text-anchor':'middle','dominant-baseline':'central',
+      fill:'rgba(255,255,255,0.8)',fontSize:8.5,fontFamily:"'Inter',sans-serif",'font-weight':'600'});
     pt.textContent=cl;g.appendChild(pt);
 
     fields.slice(0,visCount).forEach((f,i)=>{
