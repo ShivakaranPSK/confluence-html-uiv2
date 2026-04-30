@@ -155,7 +155,12 @@ body,#toolbar,#statusbar,#legend,#guide,#drawer,#tip,#minimap,#toast,
   display:flex;align-items:flex-start;justify-content:space-between;
   gap:8px;flex-shrink:0;
 }
-#drw-name{font-size:13px;font-weight:700;word-break:break-word;line-height:1.4;letter-spacing:-.2px;font-family:var(--mono)}
+#drw-name{
+  font-size:12px;font-weight:700;line-height:1.4;letter-spacing:-.1px;
+  font-family:var(--mono);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  min-width:0;
+}
 #drw-sub{font-size:11px;color:var(--t2);margin-top:4px}
 #drw-close{
   background:var(--s2);border:1px solid var(--b3);color:var(--t2);
@@ -219,16 +224,57 @@ code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mo
 ════════════════════════════════════ */
 .dsec{margin-bottom:16px}
 .dsec-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:8px}
-.dfield{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--surface);border:1px solid var(--b2);border-radius:7px;margin-bottom:3px;font-family:var(--mono);font-size:11px}
+
+/* Column rows — three-zone layout that never overflows */
+.dfield{
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  align-items:center;gap:6px;
+  padding:6px 10px;
+  background:var(--surface);border:1px solid var(--b2);border-radius:7px;
+  margin-bottom:3px;font-family:var(--mono);font-size:11px;
+  min-width:0; /* prevent grid blowout */
+}
 .dfield:hover{border-color:var(--b4)}
-.dfn{flex:1;color:var(--text);font-weight:500}
-.dft{color:var(--t3);font-size:10px}
-.rel-chip{display:flex;align-items:center;gap:7px;padding:8px 11px;background:var(--s2);border-radius:8px;margin-bottom:4px;cursor:pointer;font-size:11.5px;border:1px solid var(--b2)}
+.dfn{
+  color:var(--text);font-weight:500;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  min-width:0;
+}
+.dft{
+  color:var(--t3);font-size:9.5px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  min-width:0;flex-shrink:0;max-width:90px;
+}
+.dtags{display:flex;gap:3px;flex-shrink:0}
+
+/* Relationship chips — table name must truncate */
+.rel-chip{
+  display:flex;flex-direction:column;
+  padding:8px 11px;background:var(--s2);border-radius:8px;
+  margin-bottom:4px;cursor:pointer;
+  border:1px solid var(--b2);
+  min-width:0;overflow:hidden;
+}
 .rel-chip:hover{border-color:var(--accent-ring);background:var(--accent-bg)}
-.rel-dir{font-weight:700;color:var(--accent-h)}
-.rel-tn{flex:1;font-family:var(--mono);font-weight:500;color:var(--text)}
-.rel-via{color:var(--t3);font-size:10.5px}
-.tag{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.3px}
+.rel-chip-row{display:flex;align-items:center;gap:6px;min-width:0}
+.rel-dir{font-weight:700;color:var(--accent-h);flex-shrink:0;font-size:13px}
+.rel-tn{
+  font-family:var(--mono);font-weight:600;color:var(--text);
+  font-size:11px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  min-width:0;flex:1;
+}
+.rel-via{color:var(--t3);font-size:10px;flex-shrink:0}
+.rel-join{
+  margin-top:5px;padding-top:5px;border-top:1px solid var(--b2);
+  font-family:var(--mono);font-size:10px;color:var(--t2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  min-width:0;
+}
+.rel-join span{color:var(--accent-h);font-weight:600}
+
+.tag{font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;letter-spacing:.3px;white-space:nowrap}
 .t-pk{background:var(--pk-bg);color:var(--pk-t)}
 .t-fk{background:var(--fk-bg);color:var(--fk-t)}
 .t-pi{background:var(--pi-bg);color:var(--pi-t)}
@@ -862,20 +908,34 @@ canvas.addEventListener('mousemove',ev=>{const t=document.getElementById('tip');
 
 // ══ DRAWER ═══════════════════════════════════
 function openDrawer(table,d,edges,tables){
+  // Header
   document.getElementById('drw-name').textContent=table.name;
   const pi=(table.fields||[]).filter(f=>f.pi||f.masked);
   document.getElementById('drw-sub').innerHTML=
     `<span style="color:var(--t3)">${table.fields.length} columns</span>`+
     (pi.length?` · <span style="color:var(--pi-t)">⚠ ${pi.length} PI/Masked</span>`:'');
-  const body=document.getElementById('drw-body');body.innerHTML='';
-  const fs=document.createElement('div');fs.className='dsec';fs.innerHTML='<div class="dsec-t">Columns</div>';
+
+  const body=document.getElementById('drw-body');
+  body.innerHTML='';
+
+  // ── COLUMNS ──
+  const fs=document.createElement('div');fs.className='dsec';
+  fs.innerHTML='<div class="dsec-t">Columns</div>';
   (table.fields||[]).forEach(f=>{
     const bdgs=tagBadges(f).map(b=>`<span class="tag t-${b.l.toLowerCase()}">${b.l}</span>`).join('');
-    const row=document.createElement('div');row.className='dfield';
-    row.innerHTML=`<span class="dfn">${f.n}</span><span class="dft">${f.dt||''}</span><div style="display:flex;gap:3px">${bdgs}</div>`;
-    if(f.note)row.title=f.note;fs.appendChild(row);
+    const row=document.createElement('div');
+    row.className='dfield';
+    // Three columns: name | datatype | badges — all truncate, never overflow
+    row.innerHTML=
+      `<span class="dfn" title="${f.n}">${f.n}</span>`+
+      `<span class="dft" title="${f.dt||''}">${f.dt||''}</span>`+
+      `<div class="dtags">${bdgs}</div>`;
+    if(f.note) row.title=f.n+(f.note?` — ${f.note}`:'');
+    fs.appendChild(row);
   });
   body.appendChild(fs);
+
+  // ── RELATIONSHIPS ──
   const rels=(edges||[]).map(ED).filter(e=>e.from===table.id||e.to===table.id);
   if(rels.length){
     const rs=document.createElement('div');rs.className='dsec';
@@ -884,21 +944,44 @@ function openDrawer(table,d,edges,tables){
       const other=e.from===table.id?e.to:e.from;
       const ot=tables.find(t=>t.id===other);
       const dir=e.from===table.id?'→':'←';
-      let joinInfo='';
+      const otName=ot?.name||other;
+
+      const row=document.createElement('div');
+      row.className='rel-chip';
+
+      // Top row: arrow + table name (truncated) + cardinality
+      let html=`<div class="rel-chip-row">
+        <span class="rel-dir">${dir}</span>
+        <span class="rel-tn" title="${otName}">${otName}</span>
+        <span class="rel-via">${e.cardinality||'1:N'}</span>
+      </div>`;
+
+      // Join condition — single truncated line
       if(e.fromCol&&e.toCol){
         const lc=e.from===table.id?e.fromCol:e.toCol;
         const rc=e.from===table.id?e.toCol:e.fromCol;
-        joinInfo=`<div style="font-size:10px;font-family:var(--mono);color:var(--t3);margin-top:4px;padding-left:18px">${table.name}.<span style="color:var(--accent-h)">${lc}</span> = ${ot?.name||other}.<span style="color:var(--accent-h)">${rc}</span></div>`;
-      }else if(e.label){joinInfo=`<div style="font-size:10px;font-family:var(--mono);color:var(--t3);margin-top:4px;padding-left:18px">${e.label}</div>`;}
-      const row=document.createElement('div');row.className='rel-chip';
-      row.style.cssText='flex-direction:column;align-items:flex-start;gap:0';
-      row.innerHTML=`<div style="display:flex;align-items:center;gap:7px;width:100%"><span class="rel-dir">${dir}</span><span class="rel-tn">${ot?.name||other}</span><span class="rel-via">${e.cardinality||'1:N'}</span></div>${joinInfo}`;
+        const joinStr=`${table.name}.${lc} = ${otName}.${rc}`;
+        html+=`<div class="rel-join" title="${joinStr}">
+          ${table.name}.<span>${lc}</span> = ${otName}.<span>${rc}</span>
+        </div>`;
+      } else if(e.label){
+        html+=`<div class="rel-join" title="${e.label}">${e.label}</div>`;
+      }
+
+      row.innerHTML=html;
       row.onclick=()=>{selectedTable=other;renderERD();openDrawer(ot,d,edges,tables);};
       rs.appendChild(row);
     });
     body.appendChild(rs);
   }
-  if(table.note){const ns=document.createElement('div');ns.className='dsec';ns.innerHTML=`<div class="dsec-t">Notes</div><div style="font-size:12px;color:var(--t2);line-height:1.7">${table.note}</div>`;body.appendChild(ns);}
+
+  // ── NOTES ──
+  if(table.note){
+    const ns=document.createElement('div');ns.className='dsec';
+    ns.innerHTML=`<div class="dsec-t">Notes</div><div style="font-size:12px;color:var(--t2);line-height:1.7;word-break:break-word">${table.note}</div>`;
+    body.appendChild(ns);
+  }
+
   document.getElementById('drawer').classList.add('open');
 }
 function closeDrawer(){document.getElementById('drawer').classList.remove('open');selectedTable=null;if(data)renderERD();}
