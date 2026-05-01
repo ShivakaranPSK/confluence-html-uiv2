@@ -419,6 +419,76 @@
           "fromCol": "ID",
           "toCol": "COHORT_ID",
           "cardinality": "1:N"
+        },
+        {
+          "from": "GENR_GLOBAL_COUNTRIES",
+          "to": "GENR_GLOBAL_LOCATIONS",
+          "fromCol": "ID",
+          "toCol": "COUNTRY_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "GENR_GLOBAL_COUNTRIES",
+          "to": "GENR_GLOBAL_PROGRAMS",
+          "fromCol": "ID",
+          "toCol": "COUNTRY_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "GENR_GLOBAL_COHORT",
+          "to": "GENR_GLOBAL_RECRUITMENT_PROCESS",
+          "fromCol": "ID",
+          "toCol": "COHORT_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "GENR_GLOBAL_COUNTRIES",
+          "to": "GENR_GLOBAL_RECRUITMENT_PROCESS",
+          "fromCol": "ID",
+          "toCol": "COUNTRY_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "GENR_GLOBAL_LOCATIONS",
+          "to": "GENR_GLOBAL_RECRUITMENT_PROCESS",
+          "fromCol": "ID",
+          "toCol": "LOCATION_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "GENR_GLOBAL_PROGRAMS",
+          "to": "GENR_GLOBAL_RECRUITMENT_PROCESS",
+          "fromCol": "ID",
+          "toCol": "PROGRAM_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "GENR_GLOBAL_COHORT",
+          "to": "GENR_GLOBAL_COHORT_RECRUITMENT_PROCESS",
+          "fromCol": "ID",
+          "toCol": "COHORT_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "GENR_GLOBAL_RECRUITMENT_PROCESS",
+          "to": "GENR_GLOBAL_COHORT_RECRUITMENT_PROCESS",
+          "fromCol": "ID",
+          "toCol": "RECRUITMENT_PROCESS_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "GENR_GLOBAL_LOCATIONS",
+          "to": "GENR_GLOBAL_APPLICATION_STAGE",
+          "fromCol": "ID",
+          "toCol": "LOCATION_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "GENR_GLOBAL_PROGRAMS",
+          "to": "GENR_GLOBAL_APPLICATION_STAGE",
+          "fromCol": "ID",
+          "toCol": "PROGRAM_ID",
+          "cardinality": "1:N"
         }
       ],
       "layout": {
