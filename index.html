@@ -586,37 +586,13 @@ async function loadSchema(manual=false){
     if(!res.ok)throw new Error(`HTTP ${res.status} — schema.json not found`);
     const raw=await res.json();
     if(!raw.domains)throw new Error('"domains" key missing in schema.json');
-    // Auto-fix missing layout positions
-    Object.values(raw.domains).forEach(dom=>{
-      const tables=dom.tables||[];dom.layout=dom.layout||{};
-      const ids=new Set(tables.map(t=>t.id));
-      Object.keys(dom.layout).filter(k=>!ids.has(k)).forEach(k=>{console.warn(`ERD: stale layout key "${k}" ignored`);delete dom.layout[k];});
-      const missing=tables.filter(t=>!dom.layout[t.id]);
-      if(missing.length){
-        // Use smart layered layout for the whole domain if many are missing
-        if(missing.length > tables.length / 2){
-          // Defer to autoLayout after data is set — flag for post-load
-          dom._needsAutoLayout = true;
-        } else {
-          // Just place the few missing ones in a row below existing tables
-          const C=Math.max(2,Math.ceil(Math.sqrt(tables.length)));
-          missing.forEach((t,i)=>{const idx=tables.filter(t2=>dom.layout[t2.id]).length+i;dom.layout[t.id]=[50+(idx%C)*380,50+Math.floor(idx/C)*300];});
-        }
-      }
-    });
+    // Always auto-layout every domain on load — layout coords in JSON are ignored
+    Object.values(raw.domains).forEach(dom => computeLayout(dom));
     data=raw;domain=Object.keys(raw.domains)[0];
     selectedTable=null;Object.keys(expandedTables).forEach(k=>delete expandedTables[k]);
     document.getElementById('empty').classList.add('hidden');
     document.title=raw.title?`${raw.title} — ERD Studio`:'ERD Studio';
     document.getElementById('vtitle-sub').textContent=raw.title?`— ${raw.title}`:'';
-
-    // Auto-layout ALL domains that need it before first render
-    Object.keys(raw.domains).forEach(dk=>{
-      if(raw.domains[dk]._needsAutoLayout){
-        computeLayout(raw.domains[dk]);
-        delete raw.domains[dk]._needsAutoLayout;
-      }
-    });
 
     buildPills();renderERD();setTimeout(fitView,60);
     const meta=[];
