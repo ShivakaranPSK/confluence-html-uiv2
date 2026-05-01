@@ -958,41 +958,6 @@ function renderERD(){
       fontFamily:"'Inter',sans-serif",'font-weight':'600','letter-spacing':'0.2'});
     pt.textContent=cl;g.appendChild(pt);
 
-    // ── CROSS-DOMAIN DOMAIN PILLS (header, left of col pill) ──
-    // Show a coloured domain pill for each unique cross-domain connection
-    const xdTargets=new Map(); // targetDomKey → dom
-    (data.crossDomainEdges||[]).forEach(xd=>{
-      if(xd.from===table.id && xd.fromDomain===domain && data.domains[xd.toDomain])
-        xdTargets.set(xd.toDomain, data.domains[xd.toDomain]);
-      if(xd.to===table.id && xd.toDomain===domain && data.domains[xd.fromDomain])
-        xdTargets.set(xd.fromDomain, data.domains[xd.fromDomain]);
-    });
-    if(xdTargets.size>0){
-      let xpx=px2-6; // start left of the col pill with 6px gap
-      [...xdTargets.entries()].reverse().forEach(([dk,od])=>{
-        const dlabel=od.label||dk;
-        // Measure pill width: char count * ~5.5 + padding
-        const dpw=Math.min(Math.max(30, dlabel.length*5.5+12), 80);
-        xpx-=dpw;
-        const dcol=od.color||css('--accent');
-        // Pill background with domain colour tint
-        g.appendChild(S('rect',{x:xpx,y:py2,width:dpw,height:18,rx:9,
-          fill:`${dcol}55`}));
-        // Clip so text never overflows pill
-        const dpClipId=`dpc-${table.id}-${dk}`;
-        const dpc=S('clipPath',{id:dpClipId});
-        dpc.appendChild(S('rect',{x:xpx+3,y:py2,width:dpw-6,height:18}));
-        g.appendChild(dpc);
-        const dpt=S('text',{x:xpx+dpw/2,y:py2+9,
-          'text-anchor':'middle','dominant-baseline':'central',
-          fill:'#fff',fontSize:8,fontFamily:"'Inter',sans-serif",
-          'font-weight':'700','letter-spacing':'0.1',
-          'clip-path':`url(#${dpClipId})`});
-        dpt.textContent=dlabel; g.appendChild(dpt);
-        xpx-=4; // gap between pills
-      });
-    }
-
     // ── FIELD ROWS ──
     // Collect join columns for this table (for column-level highlight)
     const joinCols=new Set();
@@ -1783,28 +1748,33 @@ function getCtxTable(){
   return (data.domains[ctxDomainKey]?.tables||[]).find(t=>t.id===ctxTableId)||null;
 }
 
-// Clipboard helper — works on HTTPS, localhost, AND file:// URLs
 function copyToClipboard(text, successMsg){
-  // Modern API (HTTPS / localhost)
+  const done=()=>toast(successMsg||'✓ Copied');
+  const fail=()=>{
+    // Last resort: open a small prompt so user can manually copy
+    window.prompt('Copy this text (Ctrl+C / ⌘+C):', text);
+  };
   if(navigator.clipboard && window.isSecureContext){
-    navigator.clipboard.writeText(text)
-      .then(()=>toast(successMsg||'✓ Copied'))
-      .catch(()=>_fallbackCopy(text,successMsg));
+    navigator.clipboard.writeText(text).then(done).catch(()=>{
+      _execCopy(text) ? done() : fail();
+    });
   } else {
-    _fallbackCopy(text, successMsg);
+    _execCopy(text) ? done() : fail();
   }
 }
-function _fallbackCopy(text, successMsg){
-  const ta=document.createElement('textarea');
-  ta.value=text;ta.style.cssText='position:fixed;top:-999px;left:-999px;opacity:0';
-  document.body.appendChild(ta);ta.select();
+function _execCopy(text){
   try{
-    document.execCommand('copy');
-    toast(successMsg||'✓ Copied');
-  } catch(e){
-    toast('✗ Copy failed — please copy manually','#ef4444');
-  }
-  document.body.removeChild(ta);
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus();ta.select();
+    ta.setSelectionRange(0,ta.value.length);
+    const ok=document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  }catch(e){return false;}
 }
 
 function ctxCopySchema(){
