@@ -579,9 +579,9 @@
             { "n": "ORGANIZATION_OWNER",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "PAID_BY_LEARNER",                   "t": "", "dt": "NUMBER",  "pi": false, "masked": false, "note": "" },
             { "n": "PAID_TO_LEARNER",                   "t": "", "dt": "NUMBER",  "pi": false, "masked": false, "note": "" },
-            { "n": "PROGRAM_LOCATION",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "PROGRAM_LOCATION",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "PROGRAM_NAME",                   "t": "", "dt": "VARCHAR(1300)",  "pi": false, "masked": false, "note": "" },
-            { "n": "PROGRAM",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "PROGRAM",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "ON_DEMAND",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "SATURDAY_END_TIME",                   "t": "", "dt": "TIME",  "pi": false, "masked": false, "note": "" },
             { "n": "SATURDAY_START_TIME",                   "t": "", "dt": "TIME",  "pi": false, "masked": false, "note": "" },
@@ -609,12 +609,12 @@
             { "n": "IS_PAUSED",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "DAYS_SINCE_START",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
             { "n": "OPEN_SEATS",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
-            { "n": "CANVAS_COURSE",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "CANVAS_COURSE",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "IS_CANVAS_COURSE",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "LEARNER_PORTAL",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "CONTACT_EMAIL",                   "t": "", "dt": "VARCHAR(80)",  "pi": false, "masked": false, "note": "" },
             { "n": "IS_QUALTRICS_COHORT",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
-            { "n": "QUALTRICS_USER",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "QUALTRICS_USER",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "IS_LINKEDIN_COHORT",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "COHORT_CITY_NAME",                   "t": "", "dt": "VARCHAR(1300)",  "pi": false, "masked": false, "note": "" },
             { "n": "COHORT_CITY",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
@@ -693,7 +693,7 @@
             { "n": "COHORT_ID",                   "t": "", "dt": "VARCHAR(1300)",  "pi": false, "masked": false, "note": "" },
             { "n": "COHORT_PARTICIPATION_DURATIONDAYS",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
             { "n": "COHORT_PARTICIPATION_DURATION_PERCENTAGE",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
-            { "n": "COHORT",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "COHORT",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "CURRENT_OPT_OUT_END_DATE",                   "t": "", "dt": "DATE",  "pi": false, "masked": false, "note": "" },
             { "n": "CURRENT_OPT_OUT_START_DATE",                   "t": "", "dt": "DATE",  "pi": false, "masked": false, "note": "" },
             { "n": "DAYS_SINCE_FIRST_PLACEMENT_DATE",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
@@ -765,7 +765,7 @@
             { "n": "FOLLOW_UP_CHECK",                   "t": "", "dt": "VARCHAR(1300)",  "pi": false, "masked": false, "note": "" },
             { "n": "MA_VOIE_ID",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "ORIGINAL_RISK_LEVEL",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
-            { "n": "CANVAS_COURSE",                   "t": "", "dt": "VARCHAR(16777216)",  "pi": false, "masked": false, "note": "" },
+            { "n": "CANVAS_COURSE",                   "t": "fk", "dt": "VARCHAR(16777216)",  "pi": false, "masked": false, "note": "" },
             { "n": "CANVAS_ID",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "PROFILE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "CONTACT_EMAIL",                   "t": "", "dt": "VARCHAR(80)",  "pi": false, "masked": false, "note": "" },
@@ -827,7 +827,7 @@
             { "n": "ATTAINMENT_PHASE_WHEN_PLACED",                   "t": "", "dt": "VARCHAR(30)",  "pi": false, "masked": false, "note": "" },
             { "n": "BRANCH",                   "t": "", "dt": "VARCHAR(100)",  "pi": false, "masked": false, "note": "" },
             { "n": "COHORT_ID",                   "t": "", "dt": "VARCHAR(1300)",  "pi": false, "masked": false, "note": "" },
-            { "n": "COHORT",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "COHORT",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "EMPLOYER",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "EMPLOYMENT_TYPE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "EMPLOYMENT",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
@@ -1204,7 +1204,7 @@
             { "n": "ACTIVE",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "ASSESSMENT_CATEGORY",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "ASSESSMENT_DEFINITION_ID",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
-            { "n": "COHORT",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "COHORT",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "PASSING_SCORE",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
             { "n": "PROGRAM",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "TOTAL_SCORE",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
@@ -1316,7 +1316,7 @@
           "name": "SALESFORCE_COHORT_OPERATOR",
           "note": "SALESFORCE_COHORT_OPERATOR",
           "fields": [
-            { "n": "COHORT",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "COHORT",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_BY_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "CURRENCY_ISO_CODE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
@@ -1371,7 +1371,7 @@
           "note": "SALESFORCE_OPPORTUNITY_RELATION",
           "fields": [
             { "n": "OPPORTUNITY",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
-            { "n": "COHORT",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" }
+            { "n": "COHORT",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" }
           ]
         },
         {
@@ -2223,7 +2223,7 @@
             { "n": "FREQUENCY",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
             { "n": "DURATION",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
             { "n": "SYSTEM_MODSTAMP",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
-            { "n": "COHORT",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "COHORT",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "SCHEDULE_START",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "IS_ACTIVE_MENTORSHIP",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "CURRENCY_ISO_CODE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
@@ -2612,7 +2612,7 @@
             { "n": "LAST_MODIFIED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "LAST_MODIFIED_BY_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "SYSTEM_MODSTAMP",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
-            { "n": "COHORT",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "COHORT",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "BD_LEAD_BLR_STATUS",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "BLR_STATUS",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "COO_BLR_STATUS",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
@@ -3032,6 +3032,90 @@
           "to": "SALESFORCE_QUESTIONNAIRE",
           "fromCol": "RECORD_TYPE_ID",
           "toCol": "RECORD_TYPE_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_COHORT",
+          "to": "SALESFORCE_LEARNER_MILESTONE",
+          "fromCol": "ID",
+          "toCol": "COHORT",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_COHORT",
+          "to": "SALESFORCE_EMPLOYMENT_ROLE",
+          "fromCol": "ID",
+          "toCol": "COHORT",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_COHORT",
+          "to": "SALESFORCE_ASSESSMENT_DEFINITION",
+          "fromCol": "ID",
+          "toCol": "COHORT",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_COHORT",
+          "to": "SALESFORCE_COHORT_OPERATOR",
+          "fromCol": "ID",
+          "toCol": "COHORT",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_COHORT",
+          "to": "SALESFORCE_OPPORTUNITY_RELATION",
+          "fromCol": "ID",
+          "toCol": "COHORT",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_COHORT",
+          "to": "SALESFORCE_MENTORSHIP_SETUP",
+          "fromCol": "ID",
+          "toCol": "COHORT",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_COHORT",
+          "to": "SALESFORCE_COHORT_EXTENSION",
+          "fromCol": "ID",
+          "toCol": "COHORT",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_PROGRAM_LOCATION",
+          "to": "SALESFORCE_GD_COHORT",
+          "fromCol": "ID",
+          "toCol": "PROGRAM_LOCATION",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_PROGRAM",
+          "to": "SALESFORCE_GD_COHORT",
+          "fromCol": "ID",
+          "toCol": "PROGRAM",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_CANVASCOURSE",
+          "to": "SALESFORCE_GD_COHORT",
+          "fromCol": "ID",
+          "toCol": "CANVAS_COURSE",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_CANVASCOURSE",
+          "to": "SALESFORCE_LEARNER_MILESTONE",
+          "fromCol": "ID",
+          "toCol": "CANVAS_COURSE",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_USER",
+          "to": "SALESFORCE_GD_COHORT",
+          "fromCol": "ID",
+          "toCol": "QUALTRICS_USER",
           "cardinality": "1:N"
         }
       ],
