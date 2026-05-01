@@ -3159,5 +3159,27 @@
         "SALESFORCE_ATTENDANCE": [2700, 60]
       }
     }
-  }
+  },
+  "crossDomainEdges": [
+    {
+      "fromDomain": "MySQL",
+      "from": "GENR_GLOBAL_STUDENTS",
+      "fromCol": "LEARNER_MILESTONE_ID",
+      "toDomain": "SALESFORCE",
+      "to": "SALESFORCE_LEARNER_MILESTONE",
+      "toCol": "ID",
+      "cardinality": "N:1",
+      "note": "Student links to their Salesforce milestone record"
+    },
+    {
+      "fromDomain": "MySQL",
+      "from": "GENR_GLOBAL_COHORT",
+      "fromCol": "SF_ID",
+      "toDomain": "SALESFORCE",
+      "to": "SALESFORCE_GD_COHORT",
+      "toCol": "ID",
+      "cardinality": "1:1",
+      "note": "MySQL cohort synced from Salesforce cohort"
+    }
+  ]
 }
