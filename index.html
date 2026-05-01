@@ -860,7 +860,12 @@ function renderERD(){
     const isExp=!!expandedTables[table.id],collapsed=!isExp&&total>COLLAPSE_AT;
     const visCount=collapsed?PREVIEW:total,showTgl=total>COLLAPSE_AT;
     const isSel=selectedTable===table.id;
-    const isDimmed=selectedTable&&!isSel&&!edges.map(ED).some(e=>(e.from===selectedTable&&e.to===table.id)||(e.to===selectedTable&&e.from===table.id));
+    // Dim table if: something is selected AND this isn't it AND it has no edges to/from selected
+    const samedomainLinked = selectedTable && edges.map(ED).some(e=>(e.from===selectedTable&&e.to===table.id)||(e.to===selectedTable&&e.from===table.id));
+    const crossdomainLinked = selectedTable && (data.crossDomainEdges||[]).some(xd=>
+      (xd.from===selectedTable&&xd.to===table.id)||(xd.to===selectedTable&&xd.from===table.id)
+    );
+    const isDimmed = selectedTable && !isSel && !samedomainLinked && !crossdomainLinked;
     const g=S('g');g.style.cursor='pointer';g.style.opacity=isDimmed?'0.2':'1';g.style.transition='opacity .2s ease';
 
     const cpId=`cp-${table.id}`;
@@ -961,13 +966,10 @@ function renderERD(){
       if(ed.from===table.id && ed.fromCol) joinCols.add(ed.fromCol);
       if(ed.to===table.id && ed.toCol) joinCols.add(ed.toCol);
     });
-    // Cross-domain join cols
-    if(data) Object.values(data.domains).forEach(od=>{
-      (od.edges||[]).forEach(e=>{
-        const ed=ED(e);
-        if(ed.from===table.id && ed.fromCol) joinCols.add(ed.fromCol);
-        if(ed.to===table.id && ed.toCol) joinCols.add(ed.toCol);
-      });
+    // Cross-domain join cols — read from root crossDomainEdges
+    (data.crossDomainEdges||[]).forEach(e=>{
+      if(e.from===table.id && e.fromDomain===domain && e.fromCol) joinCols.add(e.fromCol);
+      if(e.to===table.id && e.toDomain===domain && e.toCol) joinCols.add(e.toCol);
     });
 
     fields.slice(0,visCount).forEach((f,i)=>{
@@ -1081,44 +1083,43 @@ function renderERD(){
     gT.appendChild(g);
   });
 
-  // ── CROSS-DOMAIN EDGES ──────────────────────
-  // Render dashed lines between tables that share column names across domains
-  if(data){
-    const domKeys=Object.keys(data.domains);
-    domKeys.forEach(dk=>{
-      if(dk===domain) return; // same-domain edges already rendered above
-      const od=data.domains[dk];
-      (od.edges||[]).forEach(raw=>{
-        const e=ED(raw);
-        // Check if either end of this edge exists in the current domain
-        const currentTables=tables;
-        const otherTables=od.tables||[];
-        const fromInCurrent=currentTables.find(t=>t.id===e.from);
-        const toInCurrent=currentTables.find(t=>t.id===e.to);
-        const fromInOther=otherTables.find(t=>t.id===e.from);
-        const toInOther=otherTables.find(t=>t.id===e.to);
+  // ── CROSS-DOMAIN EDGE BADGES + LINES ─────────
+  (data.crossDomainEdges||[]).forEach(xd=>{
+    let localTableId=null, targetDomainKey=null, isFrom=false;
+    if(xd.fromDomain===domain && xd.toDomain!==domain){
+      localTableId=xd.from; targetDomainKey=xd.toDomain; isFrom=true;
+    } else if(xd.toDomain===domain && xd.fromDomain!==domain){
+      localTableId=xd.to; targetDomainKey=xd.fromDomain; isFrom=false;
+    }
+    if(!localTableId||!layout[localTableId]) return;
+    const localTable=tables.find(t=>t.id===localTableId);
+    if(!localTable) return;
+    const targetDom=data.domains[targetDomainKey];
+    if(!targetDom) return;
+    const col=targetDom.color||css('--accent');
+    const [lx,ly]=layout[localTableId];
+    const lw=TW(localTable), lh=TH(localTable);
 
-        // Only draw if one end is in current domain and other end is in the other domain
-        if(!(fromInCurrent&&toInOther) && !(toInCurrent&&fromInOther)) return;
+    // ↗ badge pinned to top-right of card
+    const bx=lx+lw-14, by=ly+4;
+    const badge=S('g');badge.style.pointerEvents='none';
+    badge.appendChild(S('rect',{x:bx,y:by,width:14,height:14,rx:7,fill:col,opacity:.85}));
+    const bt=S('text',{x:bx+7,y:by+7,'text-anchor':'middle','dominant-baseline':'central',
+      fill:'#fff',fontSize:8,fontWeight:700,fontFamily:"'Inter',sans-serif"});
+    bt.textContent='↗'; badge.appendChild(bt);
+    gT.appendChild(badge);
 
-        const localTable=fromInCurrent||toInCurrent;
-        if(!localTable||!layout[localTable.id]) return;
-        const [lx,ly]=layout[localTable.id];
-        const lw=TW(localTable),lh=TH(localTable);
-        // Draw a small badge at the edge port indicating cross-domain connection
-        const bx=e.from===localTable.id ? lx+lw-4 : lx-4;
-        const by=ly+lh/2-8;
-        const badge=S('g');
-        badge.style.cursor='default';
-        badge.style.pointerEvents='none';
-        badge.appendChild(S('rect',{x:bx,y:by,width:8,height:16,rx:4,
-          fill:od.color||css('--accent'),opacity:.7}));
-        badge.appendChild(S('text',{x:bx+4,y:by+8,'text-anchor':'middle','dominant-baseline':'central',
-          fill:'#fff',fontSize:7,fontWeight:700,fontFamily:"'Inter',sans-serif"})).textContent='↗';
-        gT.appendChild(badge);
-      });
-    });
-  }
+    // Dashed stub line pointing right off the card edge, indicating off-screen connection
+    const ex=lx+lw+8, ey=ly+lh/2;
+    const stub=S('line',{x1:lx+lw,y1:ey,x2:ex,y2:ey,
+      stroke:col,'stroke-width':1.5,'stroke-dasharray':'3 2',opacity:.6});
+    gE.appendChild(stub);
+    // Small domain label at the stub end
+    const dtxt=S('text',{x:ex+3,y:ey,'dominant-baseline':'central',
+      fill:col,fontSize:8.5,fontFamily:"'Inter',sans-serif",'font-weight':'600',opacity:.7});
+    dtxt.textContent=targetDom.label||targetDomainKey;
+    gE.appendChild(dtxt);
+  });
 
   svg.appendChild(gE);svg.appendChild(gT);
   applyTransform();updateMinimap();
@@ -1339,43 +1340,42 @@ function openDrawer(table,d,edges,tables){
   }
 
   // ── CROSS-DOMAIN RELATIONSHIPS ──
-  if(data){
-    const xrels=[];
-    Object.entries(data.domains).forEach(([dk,od])=>{
-      if(dk===domain) return;
-      (od.edges||[]).map(ED).forEach(e=>{
-        if(e.from===table.id||e.to===table.id){
-          xrels.push({e,dk,od});
-        }
-      });
+  const xrels=(data.crossDomainEdges||[]).filter(xd=>
+    (xd.from===table.id && xd.fromDomain===domain) ||
+    (xd.to===table.id && xd.toDomain===domain)
+  );
+  if(xrels.length){
+    const xs=document.createElement('div');xs.className='dsec';
+    xs.innerHTML=`<div class="dsec-t">Cross-domain (${xrels.length})</div>`;
+    xrels.forEach(xd=>{
+      const isFrom = xd.from===table.id && xd.fromDomain===domain;
+      const targetDk = isFrom ? xd.toDomain : xd.fromDomain;
+      const targetId  = isFrom ? xd.to       : xd.from;
+      const localCol  = isFrom ? xd.fromCol  : xd.toCol;
+      const targetCol = isFrom ? xd.toCol    : xd.fromCol;
+      const dir = isFrom ? '→' : '←';
+      const od=data.domains[targetDk];
+      const ot=(od?.tables||[]).find(t=>t.id===targetId);
+      const otName=ot?.name||targetId;
+      const domLabel=od?.label||targetDk;
+      const domColor=od?.color||css('--accent');
+      const row=document.createElement('div');row.className='rel-chip';
+      const joinInfo=(localCol&&targetCol)
+        ?`<div class="rel-join">${table.name}.<span>${localCol}</span> = ${otName}.<span>${targetCol}</span></div>`
+        :'';
+      const noteHtml=xd.note?`<div style="font-size:10px;color:var(--t3);margin-top:4px;padding-left:18px">${xd.note}</div>`:'';
+      row.innerHTML=`<div class="rel-chip-row">
+        <span class="rel-dir">${dir}</span>
+        <span class="rel-tn" title="${otName}">${otName}</span>
+        <span class="rel-via">${xd.cardinality||'1:N'}</span>
+        <span class="xdomain-badge" title="Domain: ${domLabel}" style="background:${domColor}22;color:${domColor};border-color:${domColor}55">${domLabel}</span>
+      </div>${joinInfo}${noteHtml}`;
+      row.onclick=()=>{
+        if(od&&ot){domain=targetDk;selectedTable=targetId;buildPills();renderERD();openDrawer(ot,od,od.edges||[],od.tables||[]);}
+      };
+      xs.appendChild(row);
     });
-    if(xrels.length){
-      const xs=document.createElement('div');xs.className='dsec';
-      xs.innerHTML=`<div class="dsec-t">Cross-domain (${xrels.length})</div>`;
-      xrels.forEach(({e,dk,od})=>{
-        const other=e.from===table.id?e.to:e.from;
-        const ot=(od.tables||[]).find(t=>t.id===other);
-        const otName=ot?.name||other;
-        const dir=e.from===table.id?'→':'←';
-        const row=document.createElement('div');row.className='rel-chip';
-        const lc=e.from===table.id?e.fromCol:e.toCol;
-        const rc=e.from===table.id?e.toCol:e.fromCol;
-        const joinInfo=(lc&&rc)
-          ?`<div class="rel-join">${table.name}.<span>${lc}</span> = ${otName}.<span>${rc}</span></div>`:'';
-        row.innerHTML=`<div class="rel-chip-row">
-          <span class="rel-dir">${dir}</span>
-          <span class="rel-tn" title="${otName}">${otName}</span>
-          <span class="rel-via">${e.cardinality||'1:N'}</span>
-          <span class="xdomain-badge" title="In domain: ${od.label||dk}" style="background:${od.color||'var(--accent)'}22;color:${od.color||'var(--accent)'};border-color:${od.color||'var(--accent)'}55">${od.label||dk}</span>
-        </div>${joinInfo}`;
-        // Click cross-domain chip → switch to that domain and open the other table
-        row.onclick=()=>{
-          if(ot){domain=dk;selectedTable=other;buildPills();renderERD();openDrawer(ot,od,od.edges||[],od.tables||[]);}
-        };
-        xs.appendChild(row);
-      });
-      body.appendChild(xs);
-    }
+    body.appendChild(xs);
   }
 
   // ── NOTES ──
@@ -1741,19 +1741,39 @@ function getCtxTable(){
   return (data.domains[ctxDomainKey]?.tables||[]).find(t=>t.id===ctxTableId)||null;
 }
 
+// Clipboard helper — works on HTTPS, localhost, AND file:// URLs
+function copyToClipboard(text, successMsg){
+  // Modern API (HTTPS / localhost)
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text)
+      .then(()=>toast(successMsg||'✓ Copied'))
+      .catch(()=>_fallbackCopy(text,successMsg));
+  } else {
+    _fallbackCopy(text, successMsg);
+  }
+}
+function _fallbackCopy(text, successMsg){
+  const ta=document.createElement('textarea');
+  ta.value=text;ta.style.cssText='position:fixed;top:-999px;left:-999px;opacity:0';
+  document.body.appendChild(ta);ta.select();
+  try{
+    document.execCommand('copy');
+    toast(successMsg||'✓ Copied');
+  } catch(e){
+    toast('✗ Copy failed — please copy manually','#ef4444');
+  }
+  document.body.removeChild(ta);
+}
+
 function ctxCopySchema(){
   closeCtxMenu();
   const t=getCtxTable(); if(!t) return;
-  navigator.clipboard.writeText(JSON.stringify(t,null,2))
-    .then(()=>toast('✓ Table JSON copied to clipboard'))
-    .catch(()=>toast('Copy failed — try again','#ef4444'));
+  copyToClipboard(JSON.stringify(t,null,2),'✓ Table JSON copied');
 }
 function ctxCopyName(){
   closeCtxMenu();
   const t=getCtxTable(); if(!t) return;
-  navigator.clipboard.writeText(t.name)
-    .then(()=>toast(`✓ Copied "${t.name}"`))
-    .catch(()=>toast('Copy failed','#ef4444'));
+  copyToClipboard(t.name, `✓ Copied "${t.name}"`);
 }
 function ctxExpand(){
   closeCtxMenu();
