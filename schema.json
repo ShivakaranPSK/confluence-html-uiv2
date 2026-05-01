@@ -3162,20 +3162,20 @@
   },
   "crossDomainEdges": [
     {
-      "fromDomain": "MySQL",
+      "fromDomain": "MySQL Tables",
       "from": "GENR_GLOBAL_STUDENTS",
       "fromCol": "LEARNER_MILESTONE_ID",
-      "toDomain": "SALESFORCE",
+      "toDomain": "Salesforce Tables",
       "to": "SALESFORCE_LEARNER_MILESTONE",
       "toCol": "ID",
       "cardinality": "N:1",
       "note": "Student links to their Salesforce milestone record"
     },
     {
-      "fromDomain": "MySQL",
+      "fromDomain": "MySQL Tables",
       "from": "GENR_GLOBAL_COHORT",
       "fromCol": "SF_ID",
-      "toDomain": "SALESFORCE",
+      "toDomain": "Salesforce Tables",
       "to": "SALESFORCE_GD_COHORT",
       "toCol": "ID",
       "cardinality": "1:1",
