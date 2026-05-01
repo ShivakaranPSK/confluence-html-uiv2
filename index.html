@@ -542,11 +542,16 @@ async function loadSchema(manual=false){
     document.getElementById('empty').classList.add('hidden');
     document.title=raw.title?`${raw.title} — ERD Studio`:'ERD Studio';
     document.getElementById('vtitle-sub').textContent=raw.title?`— ${raw.title}`:'';
-    buildPills();renderERD();
-    // Auto-layout domains that had no/bad layout data
-    const needsLayout=Object.keys(raw.domains).some(k=>raw.domains[k]._needsAutoLayout);
-    if(needsLayout){ setTimeout(()=>{autoLayout();},80); }
-    else { setTimeout(fitView,60); }
+
+    // Auto-layout ALL domains that need it before first render
+    Object.keys(raw.domains).forEach(dk=>{
+      if(raw.domains[dk]._needsAutoLayout){
+        computeLayout(raw.domains[dk]);
+        delete raw.domains[dk]._needsAutoLayout;
+      }
+    });
+
+    buildPills();renderERD();setTimeout(fitView,60);
     const meta=[];
     if(raw.updatedAt)meta.push(`Updated ${raw.updatedAt}`);
     if(raw.updatedBy)meta.push(`by ${raw.updatedBy}`);
@@ -924,61 +929,103 @@ function fitView(){
   panX=(cw-fw*scale)/2-minX*scale+pad*scale;panY=(ch-fh*scale)/2-minY*scale+pad*scale;
   applyTransform();
 }
-function autoLayout(){
-  if(!data||!domain) return;
-  const d=data.domains[domain],tables=d.tables||[],edges=(d.edges||[]).map(ED);
+// ══ LAYOUT ENGINE ════════════════════════════
+// computeLayout(dom) — works on any domain object, no global state
+// Safe: handles cycles, isolated tables, empty edge lists
+function computeLayout(dom){
+  const tables=dom.tables||[];
+  const edges=(dom.edges||[]).map(ED);
   if(!tables.length) return;
-  const ids=tables.map(t=>t.id);
 
-  // Build adjacency maps
+  const ids=tables.map(t=>t.id);
+  const idSet=new Set(ids);
+
+  // Build adjacency — only consider edges whose both ends are in this domain
   const out={},inc={};
   ids.forEach(id=>{out[id]=[];inc[id]=[];});
   edges.forEach(e=>{
-    if(out[e.from]) out[e.from].push(e.to);
-    if(inc[e.to])   inc[e.to].push(e.from);
+    if(idSet.has(e.from)&&idSet.has(e.to)){
+      out[e.from].push(e.to);
+      inc[e.to].push(e.from);
+    }
   });
 
-  // Assign layers via BFS — roots (no incoming) start at layer 0
+  // Assign layers — BFS with visited set to prevent infinite loops on cycles
   const layer={};
+  const visited=new Set();
+
+  // Roots: no incoming edges
   ids.forEach(id=>{ if(inc[id].length===0) layer[id]=0; });
-  // Tables with no edges also start at 0
+  // Isolated tables (no edges at all) also at layer 0
   ids.forEach(id=>{ if(layer[id]===undefined) layer[id]=0; });
+
   const queue=ids.filter(id=>layer[id]===0);
   let head=0;
   while(head<queue.length){
     const id=queue[head++];
-    out[id].forEach(next=>{
-      if(layer[next]===undefined||layer[next]<=layer[id]){
-        layer[next]=(layer[id]||0)+1;
-        queue.push(next);
+    if(visited.has(id)) continue; // cycle protection
+    visited.add(id);
+    (out[id]||[]).forEach(next=>{
+      const newLayer=(layer[id]||0)+1;
+      // Only update and re-queue if we found a deeper layer
+      if(layer[next]===undefined||layer[next]<newLayer){
+        layer[next]=newLayer;
+        if(!visited.has(next)) queue.push(next);
       }
     });
   }
 
-  // Group by layer
+  // Any table still unvisited (part of a cycle with no root) gets its own layer
+  ids.forEach(id=>{ if(layer[id]===undefined) layer[id]=0; });
+
+  // Group tables by layer
   const byLayer={};
   ids.forEach(id=>{
-    const l=layer[id]||0;
+    const l=layer[id];
     (byLayer[l]=byLayer[l]||[]).push(id);
   });
 
-  const H_GAP=80, V_GAP=32;
+  // Sort tables within each layer: PKs first, then by field count desc
+  Object.values(byLayer).forEach(arr=>{
+    arr.sort((a,b)=>{
+      const ta=tables.find(t=>t.id===a);
+      const tb=tables.find(t=>t.id===b);
+      const pkA=ta?.fields?.some(f=>f.t==='pk')?0:1;
+      const pkB=tb?.fields?.some(f=>f.t==='pk')?0:1;
+      if(pkA!==pkB) return pkA-pkB;
+      return (tb?.fields?.length||0)-(ta?.fields?.length||0);
+    });
+  });
+
+  const H_GAP=90, V_GAP=28;
   const layout={};
   const layerNums=Object.keys(byLayer).map(Number).sort((a,b)=>a-b);
+
   let curX=60;
   layerNums.forEach(l=>{
     const tableIds=byLayer[l];
-    const maxW=Math.max(...tableIds.map(id=>{const t=tables.find(t=>t.id===id);return t?TW(t):250;}));
+    const maxW=Math.max(...tableIds.map(id=>{
+      const t=tables.find(t=>t.id===id);
+      return t?TW(t):280;
+    }));
     let curY=60;
     tableIds.forEach(id=>{
       layout[id]=[curX,curY];
       const t=tables.find(t=>t.id===id);
-      curY+=(t?TH(t):200)+V_GAP;
+      curY+=(t?TH(t):180)+V_GAP;
     });
     curX+=maxW+H_GAP;
   });
 
-  d.layout=layout;
+  dom.layout=layout;
+}
+
+// autoLayout() — applies computeLayout to the currently active domain tab
+function autoLayout(){
+  if(!data||!domain) return;
+  const dom=data.domains[domain];
+  if(!dom||!dom.tables?.length) return;
+  computeLayout(dom);
   renderERD();
   setTimeout(fitView,30);
   toast('⟲ Smart layout applied');
