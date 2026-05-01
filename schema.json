@@ -524,7 +524,7 @@
             { "n": "SYSTEM_MODSTAMP",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "LAST_VIEWED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "LAST_REFERENCED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
-            { "n": "GENERATION_ORGANIZATION_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "GENERATION_ORGANIZATION_ID",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "COURSE_ID",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" }
           ]
         },
@@ -538,7 +538,7 @@
             { "n": "IS_DELETED",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "NAME",                   "t": "", "dt": "VARCHAR(80)",  "pi": false, "masked": false, "note": "" },
             { "n": "CURRENCY_ISO_CODE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
-            { "n": "RECORD_TYPE_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "RECORD_TYPE_ID",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_BY_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "LAST_MODIFIED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
@@ -600,7 +600,7 @@
             { "n": "WEDNESDAY_START_TIME",                   "t": "", "dt": "TIME",  "pi": false, "masked": false, "note": "" },
             { "n": "GEN_EXTERNAL_ID",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
             { "n": "GROUP_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
-            { "n": "GENERATION_ORGANIZATION_ID",                   "t": "", "dt": "VARCHAR(1300)",  "pi": false, "masked": false, "note": "" },
+            { "n": "GENERATION_ORGANIZATION_ID",                   "t": "fk", "dt": "VARCHAR(1300)",  "pi": false, "masked": false, "note": "" },
             { "n": "LEARNERS",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
             { "n": "PERCENTAGE_ATTENDANCE_DUE",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
             { "n": "RECRUITMENT_END_DATE",                   "t": "", "dt": "DATE",  "pi": false, "masked": false, "note": "" },
@@ -670,7 +670,7 @@
             { "n": "IS_DELETED",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "NAME",                   "t": "", "dt": "VARCHAR(80)",  "pi": false, "masked": false, "note": "" },
             { "n": "CURRENCY_ISO_CODE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
-            { "n": "RECORD_TYPE_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "RECORD_TYPE_ID",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_BY_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "LAST_MODIFIED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
@@ -815,7 +815,7 @@
             { "n": "IS_DELETED",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "NAME",                   "t": "", "dt": "VARCHAR(80)",  "pi": false, "masked": false, "note": "" },
             { "n": "CURRENCY_ISO_CODE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
-            { "n": "RECORD_TYPE_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "RECORD_TYPE_ID",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_BY_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "LAST_MODIFIED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
@@ -923,7 +923,7 @@
             { "n": "ACTIVITY_MAPPING",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "SECONDARY_LEAD_SOURCE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "OWNER_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
-            { "n": "RECORD_TYPE_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "RECORD_TYPE_ID",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "ROLE_FUNCTION",                   "t": "", "dt": "VARCHAR(1300)",  "pi": false, "masked": false, "note": "" }
           ]
         },
@@ -1012,7 +1012,7 @@
             { "n": "CURRENCY_ISO_CODE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "STATUS_DATE",                   "t": "", "dt": "DATE",  "pi": false, "masked": false, "note": "" },
             { "n": "STATUS_DAYS_O4",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
-            { "n": "RECORD_TYPE_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "RECORD_TYPE_ID",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "ADDITIONAL_HIRE_DATE",                   "t": "", "dt": "DATE",  "pi": false, "masked": false, "note": "" },
             { "n": "HIRE_ON_DEMAND_RETENTION_FEE",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
@@ -1157,7 +1157,7 @@
             { "n": "IS_DELETED",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "NAME",                   "t": "", "dt": "VARCHAR(80)",  "pi": false, "masked": false, "note": "" },
             { "n": "CURRENCY_ISO_CODE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
-            { "n": "RECORD_TYPE_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "RECORD_TYPE_ID",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_BY_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "LAST_MODIFIED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
@@ -2036,7 +2036,7 @@
             { "n": "LAST_DONATION_DATE",                   "t": "", "dt": "DATE",  "pi": false, "masked": false, "note": "" },
             { "n": "ACTIVE_PROGRAMS",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
             { "n": "OPPS_CLOSED_LAST_N_DAYS",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
-            { "n": "RECORD_TYPE_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "RECORD_TYPE_ID",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "MATCHING_GIFT_INFO_UPDATED",                   "t": "", "dt": "DATE",  "pi": false, "masked": false, "note": "" },
             { "n": "ALL_TIME_LOCATIONS",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
             { "n": "FUNDERS",                   "t": "", "dt": "FLOAT",  "pi": false, "masked": false, "note": "" },
@@ -2161,7 +2161,7 @@
             { "n": "IS_DELETED",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "NAME",                   "t": "", "dt": "VARCHAR(80)",  "pi": false, "masked": false, "note": "" },
             { "n": "CURRENCY_ISO_CODE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
-            { "n": "RECORD_TYPE_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "RECORD_TYPE_ID",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_BY_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "LAST_MODIFIED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
@@ -2230,7 +2230,7 @@
             { "n": "PARENT_MENTORSHIP_SETUP",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "CREATED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "LAST_VIEWED_DATE",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
-            { "n": "RECORD_TYPE_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "RECORD_TYPE_ID",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "NAME",                   "t": "", "dt": "VARCHAR(80)",  "pi": false, "masked": false, "note": "" }
           ]
         },
@@ -2244,7 +2244,7 @@
             { "n": "SYSTEM_MODSTAMP",                   "t": "", "dt": "TIMESTAMP_NTZ",  "pi": false, "masked": false, "note": "" },
             { "n": "IS_DELETED",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "CURRENCY_ISO_CODE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
-            { "n": "RECORD_TYPE_ID",                   "t": "", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
+            { "n": "RECORD_TYPE_ID",                   "t": "fk", "dt": "VARCHAR(18)",  "pi": false, "masked": false, "note": "" },
             { "n": "OLD_MENTORSHIP_INFORMATION",                   "t": "", "dt": "BOOLEAN",  "pi": false, "masked": false, "note": "" },
             { "n": "LEARNER_PHASE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "STATUS_TEXT",                   "t": "", "dt": "VARCHAR(1300)",  "pi": false, "masked": false, "note": "" },
@@ -2955,6 +2955,83 @@
           "to": "SALESFORCE_ANNUAL_ALUMNI_SURVEY",
           "fromCol": "ID",
           "toCol": "LEARNER_MILESTONE",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_GLOBAL_ORGANIZATION",
+          "to": "SALESFORCE_CANVASCOURSE",
+          "fromCol": "ID",
+          "toCol": "GENERATION_ORGANIZATION_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_GLOBAL_ORGANIZATION",
+          "to": "SALESFORCE_GD_COHORT",
+          "fromCol": "ID",
+          "toCol": "GENERATION_ORGANIZATION_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_GD_COHORT",
+          "to": "SALESFORCE_ACCOUNT",
+          "fromCol": "RECORD_TYPE_ID",
+          "toCol": "RECORD_TYPE_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_LEARNER_MILESTONE",
+          "to": "SALESFORCE_ACCOUNT",
+          "fromCol": "RECORD_TYPE_ID",
+          "toCol": "RECORD_TYPE_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_EMPLOYMENT_ROLE",
+          "to": "SALESFORCE_ACCOUNT",
+          "fromCol": "RECORD_TYPE_ID",
+          "toCol": "RECORD_TYPE_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_LEAD__C",
+          "to": "SALESFORCE_ACCOUNT",
+          "fromCol": "RECORD_TYPE_ID",
+          "toCol": "RECORD_TYPE_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_OPPORTUNITY",
+          "to": "SALESFORCE_ACCOUNT",
+          "fromCol": "RECORD_TYPE_ID",
+          "toCol": "RECORD_TYPE_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_PROGRAM_ROLE",
+          "to": "SALESFORCE_ACCOUNT",
+          "fromCol": "RECORD_TYPE_ID",
+          "toCol": "RECORD_TYPE_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_GOAL",
+          "to": "SALESFORCE_ACCOUNT",
+          "fromCol": "RECORD_TYPE_ID",
+          "toCol": "RECORD_TYPE_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_MENTORSHIP_SETUP",
+          "to": "SALESFORCE_ACCOUNT",
+          "fromCol": "RECORD_TYPE_ID",
+          "toCol": "RECORD_TYPE_ID",
+          "cardinality": "1:N"
+        },
+        {
+          "from": "SALESFORCE_QUESTIONNAIRE",
+          "to": "SALESFORCE_ACCOUNT",
+          "fromCol": "RECORD_TYPE_ID",
+          "toCol": "RECORD_TYPE_ID",
           "cardinality": "1:N"
         }
       ],
