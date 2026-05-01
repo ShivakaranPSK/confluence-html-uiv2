@@ -958,6 +958,41 @@ function renderERD(){
       fontFamily:"'Inter',sans-serif",'font-weight':'600','letter-spacing':'0.2'});
     pt.textContent=cl;g.appendChild(pt);
 
+    // ── CROSS-DOMAIN DOMAIN PILLS (header, left of col pill) ──
+    // Show a coloured domain pill for each unique cross-domain connection
+    const xdTargets=new Map(); // targetDomKey → dom
+    (data.crossDomainEdges||[]).forEach(xd=>{
+      if(xd.from===table.id && xd.fromDomain===domain && data.domains[xd.toDomain])
+        xdTargets.set(xd.toDomain, data.domains[xd.toDomain]);
+      if(xd.to===table.id && xd.toDomain===domain && data.domains[xd.fromDomain])
+        xdTargets.set(xd.fromDomain, data.domains[xd.fromDomain]);
+    });
+    if(xdTargets.size>0){
+      let xpx=px2-6; // start left of the col pill with 6px gap
+      [...xdTargets.entries()].reverse().forEach(([dk,od])=>{
+        const dlabel=od.label||dk;
+        // Measure pill width: char count * ~5.5 + padding
+        const dpw=Math.min(Math.max(30, dlabel.length*5.5+12), 80);
+        xpx-=dpw;
+        const dcol=od.color||css('--accent');
+        // Pill background with domain colour tint
+        g.appendChild(S('rect',{x:xpx,y:py2,width:dpw,height:18,rx:9,
+          fill:`${dcol}55`}));
+        // Clip so text never overflows pill
+        const dpClipId=`dpc-${table.id}-${dk}`;
+        const dpc=S('clipPath',{id:dpClipId});
+        dpc.appendChild(S('rect',{x:xpx+3,y:py2,width:dpw-6,height:18}));
+        g.appendChild(dpc);
+        const dpt=S('text',{x:xpx+dpw/2,y:py2+9,
+          'text-anchor':'middle','dominant-baseline':'central',
+          fill:'#fff',fontSize:8,fontFamily:"'Inter',sans-serif",
+          'font-weight':'700','letter-spacing':'0.1',
+          'clip-path':`url(#${dpClipId})`});
+        dpt.textContent=dlabel; g.appendChild(dpt);
+        xpx-=4; // gap between pills
+      });
+    }
+
     // ── FIELD ROWS ──
     // Collect join columns for this table (for column-level highlight)
     const joinCols=new Set();
@@ -1083,13 +1118,17 @@ function renderERD(){
     gT.appendChild(g);
   });
 
-  // ── CROSS-DOMAIN EDGE BADGES + LINES ─────────
+  // ── CROSS-DOMAIN EDGE BADGES ─────────────────
+  // For each cross-domain edge touching the current domain:
+  //   1. A ↗ circle badge on the top-right of the card
+  //   2. A short dashed stub line (no label — domain shown in drawer)
+  const xdSeen=new Set(); // avoid duplicate badges per table
   (data.crossDomainEdges||[]).forEach(xd=>{
-    let localTableId=null, targetDomainKey=null, isFrom=false;
+    let localTableId=null, targetDomainKey=null;
     if(xd.fromDomain===domain && xd.toDomain!==domain){
-      localTableId=xd.from; targetDomainKey=xd.toDomain; isFrom=true;
+      localTableId=xd.from; targetDomainKey=xd.toDomain;
     } else if(xd.toDomain===domain && xd.fromDomain!==domain){
-      localTableId=xd.to; targetDomainKey=xd.fromDomain; isFrom=false;
+      localTableId=xd.to; targetDomainKey=xd.fromDomain;
     }
     if(!localTableId||!layout[localTableId]) return;
     const localTable=tables.find(t=>t.id===localTableId);
@@ -1100,25 +1139,28 @@ function renderERD(){
     const [lx,ly]=layout[localTableId];
     const lw=TW(localTable), lh=TH(localTable);
 
-    // ↗ badge pinned to top-right of card
-    const bx=lx+lw-14, by=ly+4;
-    const badge=S('g');badge.style.pointerEvents='none';
-    badge.appendChild(S('rect',{x:bx,y:by,width:14,height:14,rx:7,fill:col,opacity:.85}));
-    const bt=S('text',{x:bx+7,y:by+7,'text-anchor':'middle','dominant-baseline':'central',
-      fill:'#fff',fontSize:8,fontWeight:700,fontFamily:"'Inter',sans-serif"});
-    bt.textContent='↗'; badge.appendChild(bt);
-    gT.appendChild(badge);
+    // ↗ badge — only one per table even if multiple cross-domain edges
+    if(!xdSeen.has(localTableId)){
+      xdSeen.add(localTableId);
+      const bx=lx+lw-15, by=ly+4;
+      const badge=S('g');badge.style.pointerEvents='none';
+      badge.appendChild(S('rect',{x:bx,y:by,width:14,height:14,rx:7,fill:col,opacity:.9}));
+      const bt=S('text',{x:bx+7,y:by+7,'text-anchor':'middle','dominant-baseline':'central',
+        fill:'#fff',fontSize:8,fontWeight:700,fontFamily:"'Inter',sans-serif"});
+      bt.textContent='↗'; badge.appendChild(bt);
+      gT.appendChild(badge);
+    }
 
-    // Dashed stub line pointing right off the card edge, indicating off-screen connection
-    const ex=lx+lw+8, ey=ly+lh/2;
-    const stub=S('line',{x1:lx+lw,y1:ey,x2:ex,y2:ey,
-      stroke:col,'stroke-width':1.5,'stroke-dasharray':'3 2',opacity:.6});
+    // Short dashed stub — no text label, just a visual hint of connection
+    const ey=ly+lh/2;
+    const stub=S('line',{x1:lx+lw,y1:ey,x2:lx+lw+22,y2:ey,
+      stroke:col,'stroke-width':1.2,'stroke-dasharray':'3 3',opacity:.5});
     gE.appendChild(stub);
-    // Small domain label at the stub end
-    const dtxt=S('text',{x:ex+3,y:ey,'dominant-baseline':'central',
-      fill:col,fontSize:8.5,fontFamily:"'Inter',sans-serif",'font-weight':'600',opacity:.7});
-    dtxt.textContent=targetDom.label||targetDomainKey;
-    gE.appendChild(dtxt);
+    // Arrow tip at the end of the stub
+    const tip=S('polygon',{
+      points:`${lx+lw+20},${ey-3} ${lx+lw+26},${ey} ${lx+lw+20},${ey+3}`,
+      fill:col,opacity:.5});
+    gE.appendChild(tip);
   });
 
   svg.appendChild(gE);svg.appendChild(gT);
