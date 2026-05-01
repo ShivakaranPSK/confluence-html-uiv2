@@ -88,8 +88,65 @@ body,#toolbar,#statusbar,#legend,#guide,#drawer,#tip,#minimap,#toast,
 .sb-btn:hover{background:var(--s3);color:var(--text);border-color:var(--b4)}
 
 /* ════════════════════════════════════
-   TOOLBAR
+   SEARCH
 ════════════════════════════════════ */
+#search-wrap{position:relative;flex-shrink:0}
+#search-input{
+  width:200px;height:31px;
+  padding:0 10px 0 30px;
+  border-radius:7px;
+  border:1px solid var(--b3);
+  background:var(--s2);
+  color:var(--text);
+  font-family:var(--font);font-size:11.5px;
+  outline:none;
+  transition:border-color .15s, width .2s var(--ease), background .15s;
+}
+#search-input:focus{
+  border-color:var(--accent);
+  background:var(--surface);
+  width:240px;
+}
+#search-input::placeholder{color:var(--t3)}
+#search-icon{
+  position:absolute;left:9px;top:50%;transform:translateY(-50%);
+  pointer-events:none;color:var(--t3);
+}
+#search-results{
+  position:absolute;top:calc(100% + 5px);left:0;right:0;
+  background:var(--panel);
+  border:1px solid var(--b3);
+  border-radius:9px;
+  box-shadow:var(--sh-lg);
+  z-index:99;
+  overflow:hidden;
+  display:none;
+  min-width:260px;
+}
+#search-results.open{display:block}
+.sr-item{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 12px;cursor:pointer;
+  font-size:11.5px;
+  border-bottom:1px solid var(--b1);
+  transition:background .1s;
+}
+.sr-item:last-child{border-bottom:none}
+.sr-item:hover,.sr-item.active{background:var(--accent-bg)}
+.sr-item:hover .sr-name,.sr-item.active .sr-name{color:var(--accent-h)}
+.sr-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sr-name{
+  font-family:var(--mono);font-weight:600;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;
+}
+.sr-count{font-size:10px;color:var(--t3);flex-shrink:0}
+.sr-domain{font-size:9.5px;color:var(--t3);flex-shrink:0;font-style:italic}
+.sr-empty{padding:12px;text-align:center;color:var(--t3);font-size:11.5px}
+.sr-section{
+  padding:5px 12px 3px;
+  font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+  color:var(--t3);background:var(--s2);
+}
 #toolbar{
   display:flex;align-items:center;gap:8px;padding:8px 16px;
   background:var(--panel);border-bottom:1px solid var(--b2);flex-shrink:0;flex-wrap:wrap;
@@ -408,6 +465,16 @@ code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mo
   </div>
   <button class="tbtn" onclick="autoLayout()">⟲ Auto</button>
   <button class="tbtn" onclick="exportSVG()">↓ SVG</button>
+  <div class="tsep"></div>
+  <div id="search-wrap">
+    <svg id="search-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6.5" cy="6.5" r="4.5"/><line x1="10.5" y1="10.5" x2="14" y2="14" stroke-linecap="round"/></svg>
+    <input id="search-input" type="text" placeholder="Search tables… (Ctrl+K)"
+      oninput="onSearchInput(event)"
+      onkeydown="onSearchKey(event)"
+      onfocus="openSearch()"
+    />
+    <div id="search-results"></div>
+  </div>
   <button id="theme-btn" onclick="toggleTheme()" title="Toggle light / dark"><span id="theme-icon">☾</span></button>
 </div>
 
@@ -1185,6 +1252,214 @@ document.addEventListener('keydown',ev=>{
 });
 document.addEventListener('mousemove',ev=>{if(dragging)panMove(ev);});
 document.addEventListener('mouseup',()=>{if(dragging)panEnd();});
+
+// ══ SEARCH ═══════════════════════════════════
+let searchIdx = -1; // keyboard nav index
+
+function buildSearchResults(q){
+  const res = document.getElementById('search-results');
+  res.innerHTML = '';
+  if(!data) return;
+
+  const query = q.trim().toLowerCase();
+
+  // Gather matches across ALL domains
+  const matches = [];
+  Object.entries(data.domains).forEach(([dk, dom])=>{
+    (dom.tables||[]).forEach(table=>{
+      const nameMatch = table.name.toLowerCase().includes(query);
+      // Also search column names
+      const colMatches = query.length >= 2
+        ? (table.fields||[]).filter(f=>f.n.toLowerCase().includes(query))
+        : [];
+      if(nameMatch || colMatches.length > 0){
+        matches.push({dk, dom, table, colMatches, nameMatch});
+      }
+    });
+  });
+
+  if(!matches.length){
+    res.innerHTML = `<div class="sr-empty">No tables match "${q}"</div>`;
+    return;
+  }
+
+  // Group by domain
+  const byDomain = {};
+  matches.forEach(m=>{
+    (byDomain[m.dk]=byDomain[m.dk]||[]).push(m);
+  });
+
+  let globalIdx = 0;
+  Object.entries(byDomain).forEach(([dk, items])=>{
+    const dom = data.domains[dk];
+    if(Object.keys(byDomain).length > 1){
+      const sec = document.createElement('div');
+      sec.className = 'sr-section';
+      sec.textContent = dom.label || dk;
+      res.appendChild(sec);
+    }
+    items.forEach(m=>{
+      const el = document.createElement('div');
+      el.className = 'sr-item';
+      el.dataset.idx = globalIdx++;
+      el.dataset.dk = dk;
+      el.dataset.tid = m.table.id;
+
+      const colInfo = m.colMatches.length
+        ? `<span class="sr-domain">${m.colMatches.length} col match${m.colMatches.length>1?'es':''}</span>`
+        : '';
+
+      el.innerHTML =
+        `<div class="sr-dot" style="background:${dom.color||'var(--accent)'}"></div>`+
+        `<span class="sr-name" title="${m.table.name}">${highlightMatch(m.table.name, q)}</span>`+
+        `<span class="sr-count">${(m.table.fields||[]).length} cols</span>`+
+        colInfo;
+
+      el.onmousedown = (e)=>{
+        e.preventDefault(); // don't blur the input
+        selectSearchResult(dk, m.table.id);
+      };
+      res.appendChild(el);
+    });
+  });
+}
+
+function highlightMatch(text, q){
+  if(!q) return text;
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if(idx === -1) return text;
+  return text.slice(0,idx)
+    + `<mark style="background:var(--accent-bg);color:var(--accent-h);border-radius:2px">${text.slice(idx,idx+q.length)}</mark>`
+    + text.slice(idx+q.length);
+}
+
+function selectSearchResult(dk, tableId){
+  closeSearch();
+  document.getElementById('search-input').value = '';
+
+  // Switch domain if needed
+  if(dk !== domain){
+    domain = dk;
+    buildPills();
+  }
+
+  // Select the table
+  selectedTable = tableId;
+  renderERD();
+
+  // Pan + zoom to centre the table
+  const dom = data.domains[dk];
+  const layout = dom.layout || {};
+  const table = (dom.tables||[]).find(t=>t.id===tableId);
+  if(!table || !layout[tableId]) return;
+
+  const [tx, ty] = layout[tableId];
+  const tw = TW(table);
+  const th = TH(table);
+  const cw = document.getElementById('canvas').clientWidth;
+  const ch = document.getElementById('canvas').clientHeight;
+
+  // Animate pan to table
+  const targetScale = Math.min(1.2, Math.max(0.6,
+    Math.min(cw / (tw + 120), ch / (th + 120))
+  ));
+  const targetPanX = cw/2 - (tx + tw/2) * targetScale;
+  const targetPanY = ch/2 - (ty + th/2) * targetScale;
+
+  // Smooth animated pan
+  animatePan(targetPanX, targetPanY, targetScale);
+
+  // Open detail drawer
+  openDrawer(table, dom, dom.edges||[], dom.tables||[]);
+}
+
+function animatePan(toPanX, toPanY, toScale){
+  const startPanX=panX, startPanY=panY, startScale=scale;
+  const startTime=performance.now(), duration=380;
+  function ease(t){return t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
+  function step(now){
+    const t=ease(Math.min((now-startTime)/duration,1));
+    panX=startPanX+(toPanX-startPanX)*t;
+    panY=startPanY+(toPanY-startPanY)*t;
+    scale=startScale+(toScale-startScale)*t;
+    applyTransform();
+    if(t<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function openSearch(){
+  const q = document.getElementById('search-input').value;
+  if(q.trim().length > 0) buildSearchResults(q);
+  document.getElementById('search-results').classList.add('open');
+  searchIdx = -1;
+}
+
+function closeSearch(){
+  document.getElementById('search-results').classList.remove('open');
+  searchIdx = -1;
+}
+
+function onSearchInput(e){
+  const q = e.target.value;
+  if(!q.trim()){
+    document.getElementById('search-results').classList.remove('open');
+    return;
+  }
+  buildSearchResults(q);
+  document.getElementById('search-results').classList.add('open');
+  searchIdx = -1;
+}
+
+function onSearchKey(e){
+  const res = document.getElementById('search-results');
+  const items = res.querySelectorAll('.sr-item');
+
+  if(e.key === 'Escape'){
+    closeSearch();
+    document.getElementById('search-input').blur();
+    return;
+  }
+  if(e.key === 'ArrowDown'){
+    e.preventDefault();
+    searchIdx = Math.min(searchIdx+1, items.length-1);
+    updateSearchActive(items);
+    return;
+  }
+  if(e.key === 'ArrowUp'){
+    e.preventDefault();
+    searchIdx = Math.max(searchIdx-1, 0);
+    updateSearchActive(items);
+    return;
+  }
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    const active = searchIdx >= 0 ? items[searchIdx] : items[0];
+    if(active) selectSearchResult(active.dataset.dk, active.dataset.tid);
+    return;
+  }
+}
+
+function updateSearchActive(items){
+  items.forEach((el,i)=>el.classList.toggle('active', i===searchIdx));
+  if(items[searchIdx]) items[searchIdx].scrollIntoView({block:'nearest'});
+}
+
+// Ctrl/Cmd+K to focus search
+document.addEventListener('keydown', e=>{
+  if((e.ctrlKey||e.metaKey) && e.key==='k'){
+    e.preventDefault();
+    const inp = document.getElementById('search-input');
+    inp.focus(); inp.select();
+  }
+});
+
+// Click outside to close
+document.addEventListener('mousedown', e=>{
+  if(!document.getElementById('search-wrap').contains(e.target)){
+    closeSearch();
+  }
+});
 
 // ══ BOOT ═════════════════════════════════════
 loadSchema();
