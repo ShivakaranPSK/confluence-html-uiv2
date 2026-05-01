@@ -2973,63 +2973,63 @@
         },
         {
           "from": "SALESFORCE_GD_COHORT",
-          "to": "SALESFORCE_ACCOUNT",
+          "to": "SALESFORCE_GD_COHORT",
           "fromCol": "RECORD_TYPE_ID",
           "toCol": "RECORD_TYPE_ID",
           "cardinality": "1:N"
         },
         {
-          "from": "SALESFORCE_LEARNER_MILESTONE",
-          "to": "SALESFORCE_ACCOUNT",
+          "from": "SALESFORCE_ACCOUNT",
+          "to": "SALESFORCE_LEARNER_MILESTONE",
           "fromCol": "RECORD_TYPE_ID",
           "toCol": "RECORD_TYPE_ID",
           "cardinality": "1:N"
         },
         {
-          "from": "SALESFORCE_EMPLOYMENT_ROLE",
-          "to": "SALESFORCE_ACCOUNT",
+          "from": "SALESFORCE_ACCOUNT",
+          "to": "SALESFORCE_EMPLOYMENT_ROLE",
           "fromCol": "RECORD_TYPE_ID",
           "toCol": "RECORD_TYPE_ID",
           "cardinality": "1:N"
         },
         {
-          "from": "SALESFORCE_LEAD__C",
-          "to": "SALESFORCE_ACCOUNT",
+          "from": "SALESFORCE_ACCOUNT",
+          "to": "SALESFORCE_LEAD__C",
           "fromCol": "RECORD_TYPE_ID",
           "toCol": "RECORD_TYPE_ID",
           "cardinality": "1:N"
         },
         {
-          "from": "SALESFORCE_OPPORTUNITY",
-          "to": "SALESFORCE_ACCOUNT",
+          "from": "SALESFORCE_ACCOUNT",
+          "to": "SALESFORCE_OPPORTUNITY",
           "fromCol": "RECORD_TYPE_ID",
           "toCol": "RECORD_TYPE_ID",
           "cardinality": "1:N"
         },
         {
-          "from": "SALESFORCE_PROGRAM_ROLE",
-          "to": "SALESFORCE_ACCOUNT",
+          "from": "SALESFORCE_ACCOUNT",
+          "to": "SALESFORCE_PROGRAM_ROLE",
           "fromCol": "RECORD_TYPE_ID",
           "toCol": "RECORD_TYPE_ID",
           "cardinality": "1:N"
         },
         {
-          "from": "SALESFORCE_GOAL",
-          "to": "SALESFORCE_ACCOUNT",
+          "from": "SALESFORCE_ACCOUNT",
+          "to": "SALESFORCE_GOAL",
           "fromCol": "RECORD_TYPE_ID",
           "toCol": "RECORD_TYPE_ID",
           "cardinality": "1:N"
         },
         {
-          "from": "SALESFORCE_MENTORSHIP_SETUP",
-          "to": "SALESFORCE_ACCOUNT",
+          "from": "SALESFORCE_ACCOUNT",
+          "to": "SALESFORCE_MENTORSHIP_SETUP",
           "fromCol": "RECORD_TYPE_ID",
           "toCol": "RECORD_TYPE_ID",
           "cardinality": "1:N"
         },
         {
-          "from": "SALESFORCE_QUESTIONNAIRE",
-          "to": "SALESFORCE_ACCOUNT",
+          "from": "SALESFORCE_ACCOUNT",
+          "to": "SALESFORCE_QUESTIONNAIRE",
           "fromCol": "RECORD_TYPE_ID",
           "toCol": "RECORD_TYPE_ID",
           "cardinality": "1:N"
