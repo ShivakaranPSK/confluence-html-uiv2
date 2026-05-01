@@ -765,7 +765,7 @@
             { "n": "FOLLOW_UP_CHECK",                   "t": "", "dt": "VARCHAR(1300)",  "pi": false, "masked": false, "note": "" },
             { "n": "MA_VOIE_ID",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "ORIGINAL_RISK_LEVEL",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
-            { "n": "CANVAS_COURSE",                   "t": "fk", "dt": "VARCHAR(16777216)",  "pi": false, "masked": false, "note": "" },
+            { "n": "CANVAS_COURSE",                   "t": "", "dt": "VARCHAR(16777216)",  "pi": false, "masked": false, "note": "" },
             { "n": "CANVAS_ID",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "PROFILE",                   "t": "", "dt": "VARCHAR(255)",  "pi": false, "masked": false, "note": "" },
             { "n": "CONTACT_EMAIL",                   "t": "", "dt": "VARCHAR(80)",  "pi": false, "masked": false, "note": "" },
@@ -3100,13 +3100,6 @@
         {
           "from": "SALESFORCE_CANVASCOURSE",
           "to": "SALESFORCE_GD_COHORT",
-          "fromCol": "ID",
-          "toCol": "CANVAS_COURSE",
-          "cardinality": "1:N"
-        },
-        {
-          "from": "SALESFORCE_CANVASCOURSE",
-          "to": "SALESFORCE_LEARNER_MILESTONE",
           "fromCol": "ID",
           "toCol": "CANVAS_COURSE",
           "cardinality": "1:N"
