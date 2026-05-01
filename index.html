@@ -362,8 +362,73 @@ code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mo
 #toast.show{transform:translateX(-50%) translateY(0)}
 
 /* ════════════════════════════════════
-   SCROLLBARS
+   FILTER BAR
 ════════════════════════════════════ */
+#filter-bar{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 16px;
+  background:var(--bg2);border-bottom:1px solid var(--b2);
+  flex-shrink:0;font-size:11px;
+}
+#filter-bar-label{color:var(--t3);font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-right:2px}
+.filt-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:20px;
+  font-size:11px;font-weight:600;cursor:pointer;
+  border:1.5px solid var(--b3);background:transparent;
+  color:var(--t2);transition:all .15s;letter-spacing:.01em;
+}
+.filt-btn:hover{background:var(--s2);color:var(--text)}
+.filt-btn.active-pk{background:var(--pk-bg);border-color:var(--pk);color:var(--pk-t)}
+.filt-btn.active-fk{background:var(--fk-bg);border-color:var(--fk);color:var(--fk-t)}
+.filt-btn.active-pi{background:var(--pi-bg);border-color:var(--pi);color:var(--pi-t)}
+.filt-btn.active-mx{background:var(--mx-bg);border-color:var(--mx);color:var(--mx-t)}
+.filt-btn .fb-dot{width:6px;height:6px;border-radius:50%}
+#filter-clear{
+  padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:500;
+  cursor:pointer;border:1px solid var(--b3);background:transparent;color:var(--t3);
+  margin-left:2px;display:none;
+}
+#filter-clear.show{display:block}
+#filter-clear:hover{color:var(--text);border-color:var(--b4)}
+
+/* ════════════════════════════════════
+   CONTEXT MENU (right-click)
+════════════════════════════════════ */
+#ctx-menu{
+  position:fixed;z-index:200;
+  background:var(--panel);border:1px solid var(--b3);
+  border-radius:9px;box-shadow:var(--sh-lg);
+  padding:4px;min-width:180px;display:none;
+  animation:fadeIn .12s var(--ease);
+}
+#ctx-menu.open{display:block}
+@keyframes fadeIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.ctx-item{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 11px;border-radius:6px;
+  font-size:12px;cursor:pointer;color:var(--text);
+  transition:background .1s;
+}
+.ctx-item:hover{background:var(--accent-bg);color:var(--accent-h)}
+.ctx-item svg{flex-shrink:0;opacity:.6}
+.ctx-item:hover svg{opacity:1}
+.ctx-sep{height:1px;background:var(--b2);margin:3px 4px}
+
+/* ════════════════════════════════════
+   MINIMAP — make cursor pointer
+════════════════════════════════════ */
+#minimap{cursor:crosshair}
+
+/* ════════════════════════════════════
+   CROSS-DOMAIN EDGE INDICATOR
+════════════════════════════════════ */
+.xdomain-badge{
+  font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;
+  background:var(--accent-bg);color:var(--accent-h);
+  border:1px solid var(--accent-ring);letter-spacing:.2px;flex-shrink:0;
+}
+
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--b3);border-radius:3px}
@@ -380,6 +445,24 @@ code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mo
   <span id="sb-meta"></span>
   <button class="sb-btn" onclick="reloadSchema()">↺ Reload</button>
   <button class="sb-btn" onclick="toggleGuide()" id="guide-btn">📖 Guide</button>
+</div>
+
+<!-- FILTER BAR -->
+<div id="filter-bar">
+  <span id="filter-bar-label">Filter</span>
+  <button class="filt-btn" id="filt-pk" onclick="toggleFilter('pk')" title="Show only PK columns">
+    <div class="fb-dot" style="background:var(--pk-t)"></div>PK
+  </button>
+  <button class="filt-btn" id="filt-fk" onclick="toggleFilter('fk')" title="Show only FK columns">
+    <div class="fb-dot" style="background:var(--fk-t)"></div>FK
+  </button>
+  <button class="filt-btn" id="filt-pi" onclick="toggleFilter('pi')" title="Show only PI columns">
+    <div class="fb-dot" style="background:var(--pi-t)"></div>PI
+  </button>
+  <button class="filt-btn" id="filt-mx" onclick="toggleFilter('mx')" title="Show only Masked columns">
+    <div class="fb-dot" style="background:var(--mx-t)"></div>Masked
+  </button>
+  <button id="filter-clear" onclick="clearFilters()">✕ Clear</button>
 </div>
 
 <!-- GUIDE -->
@@ -498,10 +581,10 @@ code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mo
 <!-- LEGEND -->
 <div id="legend">
   <span id="leg-lbl">Legend</span>
-  <div class="leg"><div class="lsw" style="background:var(--pk-bg);border:1px solid var(--pk-t)"></div>PK — Primary key</div>
-  <div class="leg"><div class="lsw" style="background:var(--fk-bg);border:1px solid var(--fk-t)"></div>FK — Foreign key</div>
-  <div class="leg"><div class="lsw" style="background:var(--pi-bg);border:1px solid var(--pi-t)"></div>PI — Personal info</div>
-  <div class="leg"><div class="lsw" style="background:var(--mx-bg);border:1px solid var(--mx-t)"></div>Masked</div>
+  <div class="leg" onclick="toggleFilter('pk')" style="cursor:pointer" title="Filter PK columns"><div class="lsw" style="background:var(--pk-bg);border:1px solid var(--pk-t)"></div>PK — Primary key</div>
+  <div class="leg" onclick="toggleFilter('fk')" style="cursor:pointer" title="Filter FK columns"><div class="lsw" style="background:var(--fk-bg);border:1px solid var(--fk-t)"></div>FK — Foreign key</div>
+  <div class="leg" onclick="toggleFilter('pi')" style="cursor:pointer" title="Filter PI columns"><div class="lsw" style="background:var(--pi-bg);border:1px solid var(--pi-t)"></div>PI — Personal info</div>
+  <div class="leg" onclick="toggleFilter('mx')" style="cursor:pointer" title="Filter Masked columns"><div class="lsw" style="background:var(--mx-bg);border:1px solid var(--mx-t)"></div>Masked</div>
   <div class="leg" style="gap:6px"><svg width="26" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="var(--accent)" stroke-width="1.8"/><polygon points="18,2 26,5 18,8" fill="var(--accent)"/></svg>Relationship</div>
 </div>
 
@@ -517,6 +600,25 @@ code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mo
 
 <div id="tip"><div id="tip-name"></div><div id="tip-body"></div></div>
 <div id="toast"></div>
+<div id="ctx-menu">
+  <div class="ctx-item" id="ctx-copy" onclick="ctxCopySchema()">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="5" width="9" height="9" rx="2"/><path d="M3 11H2a1 1 0 01-1-1V2a1 1 0 011-1h8a1 1 0 011 1v1"/></svg>
+    Copy table JSON
+  </div>
+  <div class="ctx-item" id="ctx-copy-name" onclick="ctxCopyName()">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h12M2 8h8M2 12h6" stroke-linecap="round"/></svg>
+    Copy table name
+  </div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" id="ctx-expand" onclick="ctxExpand()">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
+    Expand all columns
+  </div>
+  <div class="ctx-item" id="ctx-focus" onclick="ctxFocus()">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke-linecap="round"/></svg>
+    Focus &amp; centre
+  </div>
+</div>
 
 <script>
 'use strict';
@@ -534,6 +636,12 @@ let data=null,domain=null,selectedTable=null;
 let panX=0,panY=0,scale=1,isPanning=false,panStart_={x:0,y:0};
 let dragging=null,dragOffset={x:0,y:0},dragMoved=false;
 const expandedTables={};
+
+// ── Filter state ──
+const activeFilters=new Set(); // 'pk','fk','pi','mx'
+
+// ── Context menu state ──
+let ctxTableId=null, ctxDomainKey=null;
 
 // ══ LAYOUT CONSTANTS ═════════════════════════
 const COLLAPSE_AT=4,PREVIEW=3;
@@ -846,17 +954,52 @@ function renderERD(){
     pt.textContent=cl;g.appendChild(pt);
 
     // ── FIELD ROWS ──
+    // Collect join columns for this table (for column-level highlight)
+    const joinCols=new Set();
+    edges.forEach(e=>{
+      const ed=ED(e);
+      if(ed.from===table.id && ed.fromCol) joinCols.add(ed.fromCol);
+      if(ed.to===table.id && ed.toCol) joinCols.add(ed.toCol);
+    });
+    // Cross-domain join cols
+    if(data) Object.values(data.domains).forEach(od=>{
+      (od.edges||[]).forEach(e=>{
+        const ed=ED(e);
+        if(ed.from===table.id && ed.fromCol) joinCols.add(ed.fromCol);
+        if(ed.to===table.id && ed.toCol) joinCols.add(ed.toCol);
+      });
+    });
+
     fields.slice(0,visCount).forEach((f,i)=>{
       const fy=y+TH_HEAD+i*TH_ROW+2;
       const st=rowStyle(f);
       const isLastVisible = i===visCount-1;
-      const isAlternate = i%2===1; // zebra striping for non-highlighted rows
+      const isAlternate = i%2===1;
+
+      // ── Filter dimming ──
+      // If a filter is active, dim rows that don't match
+      const matchesFilter = activeFilters.size===0 || (
+        (activeFilters.has('pk') && f.t==='pk') ||
+        (activeFilters.has('fk') && f.t==='fk') ||
+        (activeFilters.has('pi') && f.pi) ||
+        (activeFilters.has('mx') && f.masked)
+      );
+      const rowOpacity = (activeFilters.size>0 && !matchesFilter) ? 0.15 : 1;
+
+      // ── Join column highlight ──
+      const isJoinCol = joinCols.has(f.n) && selectedTable===table.id;
 
       // Row background
-      if(st.bg!=='transparent'){
+      if(isJoinCol){
+        // Amber glow for join column when table is selected
+        g.appendChild(S('rect',{x:x+1,y:fy,width:tw-2,height:TH_ROW,
+          fill:isDark?'rgba(217,119,6,0.22)':'rgba(217,119,6,0.14)'}));
+        // Left accent bar
+        g.appendChild(S('rect',{x:x+1,y:fy+2,width:3,height:TH_ROW-4,rx:1.5,
+          fill:'#f59e0b',opacity:.9}));
+      } else if(st.bg!=='transparent'){
         g.appendChild(S('rect',{x:x+1,y:fy,width:tw-2,height:TH_ROW,fill:st.bg}));
       } else if(isAlternate){
-        // Subtle zebra stripe
         g.appendChild(S('rect',{x:x+1,y:fy,width:tw-2,height:TH_ROW,
           fill:isDark?'rgba(255,255,255,0.018)':'rgba(0,0,0,0.018)'}));
       }
@@ -866,11 +1009,12 @@ function renderERD(){
       const badgeY=fy+(TH_ROW-14)/2;
       bdgs.forEach(b=>{
         const bwidth=bw(b.l);tx-=bwidth+3;
-        g.appendChild(S('rect',{x:tx,y:badgeY,width:bwidth,height:14,rx:4,fill:b.bg}));
+        const br=g.appendChild(S('rect',{x:tx,y:badgeY,width:bwidth,height:14,rx:4,fill:b.bg}));
+        br.setAttribute('opacity',rowOpacity);
         const bt=S('text',{x:tx+bwidth/2,y:badgeY+7,'text-anchor':'middle','dominant-baseline':'central',
           fill:b.fg,fontSize:8.5,fontWeight:700,
           fontFamily:"'Inter',sans-serif",'letter-spacing':'0.4'});
-        bt.textContent=b.l;g.appendChild(bt);
+        bt.textContent=b.l;bt.setAttribute('opacity',rowOpacity);g.appendChild(bt);
       });
       const re=bdgs.length?tx-7:x+tw-PAD;
 
@@ -881,13 +1025,12 @@ function renderERD(){
       g.appendChild(nc);
 
       // ── COLUMN NAME (line 1) ──
-      // Colour logic: PK=purple, FK=teal, PI=red, masked=amber, regular=bright white
-      const nameFill = st.fg;
+      const nameFill = isJoinCol ? '#fcd34d' : st.fg;
       const ft=S('text',{x:x+PAD,y:fy+L1,'dominant-baseline':'central',
-        fill:nameFill,fontSize:10.5,fontWeight:600,
+        fill:nameFill,fontSize:10.5,fontWeight: isJoinCol ? 700 : 600,
         fontFamily:"'JetBrains Mono',monospace",
         'clip-path':`url(#${ncId})`});
-      ft.textContent=f.n;g.appendChild(ft);
+      ft.textContent=f.n;ft.setAttribute('opacity',rowOpacity);g.appendChild(ft);
 
       // ── DATATYPE (line 2) — muted, italic style ──
       if(f.dt){
@@ -897,7 +1040,7 @@ function renderERD(){
           fontFamily:"'JetBrains Mono',monospace",
           'font-style':'italic',
           'clip-path':`url(#${ncId})`});
-        dty.textContent=f.dt;g.appendChild(dty);
+        dty.textContent=f.dt;dty.setAttribute('opacity',rowOpacity);g.appendChild(dty);
       }
 
       // ── ROW DIVIDER ──
@@ -929,8 +1072,53 @@ function renderERD(){
     g.onmouseenter=ev=>{if(!dragging)showTip(ev,table,d,edges,tables);};
     g.onmouseleave=()=>{if(!dragging)hideTip();};
     g.onclick=ev=>{if(dragMoved)return;selectedTable=selectedTable===table.id?null:table.id;renderERD();if(selectedTable)openDrawer(table,d,edges,tables);else closeDrawer();};
+    // Right-click context menu
+    g.oncontextmenu=ev=>{
+      ev.preventDefault();ev.stopPropagation();
+      ctxTableId=table.id;ctxDomainKey=domain;
+      showCtxMenu(ev.clientX,ev.clientY);
+    };
     gT.appendChild(g);
   });
+
+  // ── CROSS-DOMAIN EDGES ──────────────────────
+  // Render dashed lines between tables that share column names across domains
+  if(data){
+    const domKeys=Object.keys(data.domains);
+    domKeys.forEach(dk=>{
+      if(dk===domain) return; // same-domain edges already rendered above
+      const od=data.domains[dk];
+      (od.edges||[]).forEach(raw=>{
+        const e=ED(raw);
+        // Check if either end of this edge exists in the current domain
+        const currentTables=tables;
+        const otherTables=od.tables||[];
+        const fromInCurrent=currentTables.find(t=>t.id===e.from);
+        const toInCurrent=currentTables.find(t=>t.id===e.to);
+        const fromInOther=otherTables.find(t=>t.id===e.from);
+        const toInOther=otherTables.find(t=>t.id===e.to);
+
+        // Only draw if one end is in current domain and other end is in the other domain
+        if(!(fromInCurrent&&toInOther) && !(toInCurrent&&fromInOther)) return;
+
+        const localTable=fromInCurrent||toInCurrent;
+        if(!localTable||!layout[localTable.id]) return;
+        const [lx,ly]=layout[localTable.id];
+        const lw=TW(localTable),lh=TH(localTable);
+        // Draw a small badge at the edge port indicating cross-domain connection
+        const bx=e.from===localTable.id ? lx+lw-4 : lx-4;
+        const by=ly+lh/2-8;
+        const badge=S('g');
+        badge.style.cursor='default';
+        badge.style.pointerEvents='none';
+        badge.appendChild(S('rect',{x:bx,y:by,width:8,height:16,rx:4,
+          fill:od.color||css('--accent'),opacity:.7}));
+        badge.appendChild(S('text',{x:bx+4,y:by+8,'text-anchor':'middle','dominant-baseline':'central',
+          fill:'#fff',fontSize:7,fontWeight:700,fontFamily:"'Inter',sans-serif"})).textContent='↗';
+        gT.appendChild(badge);
+      });
+    });
+  }
 
   svg.appendChild(gE);svg.appendChild(gT);
   applyTransform();updateMinimap();
@@ -1119,7 +1307,7 @@ function openDrawer(table,d,edges,tables){
   });
   body.appendChild(fs);
 
-  // ── RELATIONSHIPS ──
+  // ── RELATIONSHIPS (same domain) ──
   const rels=(edges||[]).map(ED).filter(e=>e.from===table.id||e.to===table.id);
   if(rels.length){
     const rs=document.createElement('div');rs.className='dsec';
@@ -1129,34 +1317,65 @@ function openDrawer(table,d,edges,tables){
       const ot=tables.find(t=>t.id===other);
       const dir=e.from===table.id?'→':'←';
       const otName=ot?.name||other;
-
-      const row=document.createElement('div');
-      row.className='rel-chip';
-
-      // Top row: arrow + table name (truncated) + cardinality
+      const row=document.createElement('div');row.className='rel-chip';
       let html=`<div class="rel-chip-row">
         <span class="rel-dir">${dir}</span>
         <span class="rel-tn" title="${otName}">${otName}</span>
         <span class="rel-via">${e.cardinality||'1:N'}</span>
       </div>`;
-
-      // Join condition — single truncated line
       if(e.fromCol&&e.toCol){
         const lc=e.from===table.id?e.fromCol:e.toCol;
         const rc=e.from===table.id?e.toCol:e.fromCol;
         const joinStr=`${table.name}.${lc} = ${otName}.${rc}`;
-        html+=`<div class="rel-join" title="${joinStr}">
-          ${table.name}.<span>${lc}</span> = ${otName}.<span>${rc}</span>
-        </div>`;
+        html+=`<div class="rel-join" title="${joinStr}">${table.name}.<span>${lc}</span> = ${otName}.<span>${rc}</span></div>`;
       } else if(e.label){
         html+=`<div class="rel-join" title="${e.label}">${e.label}</div>`;
       }
-
       row.innerHTML=html;
       row.onclick=()=>{selectedTable=other;renderERD();openDrawer(ot,d,edges,tables);};
       rs.appendChild(row);
     });
     body.appendChild(rs);
+  }
+
+  // ── CROSS-DOMAIN RELATIONSHIPS ──
+  if(data){
+    const xrels=[];
+    Object.entries(data.domains).forEach(([dk,od])=>{
+      if(dk===domain) return;
+      (od.edges||[]).map(ED).forEach(e=>{
+        if(e.from===table.id||e.to===table.id){
+          xrels.push({e,dk,od});
+        }
+      });
+    });
+    if(xrels.length){
+      const xs=document.createElement('div');xs.className='dsec';
+      xs.innerHTML=`<div class="dsec-t">Cross-domain (${xrels.length})</div>`;
+      xrels.forEach(({e,dk,od})=>{
+        const other=e.from===table.id?e.to:e.from;
+        const ot=(od.tables||[]).find(t=>t.id===other);
+        const otName=ot?.name||other;
+        const dir=e.from===table.id?'→':'←';
+        const row=document.createElement('div');row.className='rel-chip';
+        const lc=e.from===table.id?e.fromCol:e.toCol;
+        const rc=e.from===table.id?e.toCol:e.fromCol;
+        const joinInfo=(lc&&rc)
+          ?`<div class="rel-join">${table.name}.<span>${lc}</span> = ${otName}.<span>${rc}</span></div>`:'';
+        row.innerHTML=`<div class="rel-chip-row">
+          <span class="rel-dir">${dir}</span>
+          <span class="rel-tn" title="${otName}">${otName}</span>
+          <span class="rel-via">${e.cardinality||'1:N'}</span>
+          <span class="xdomain-badge" title="In domain: ${od.label||dk}" style="background:${od.color||'var(--accent)'}22;color:${od.color||'var(--accent)'};border-color:${od.color||'var(--accent)'}55">${od.label||dk}</span>
+        </div>${joinInfo}`;
+        // Click cross-domain chip → switch to that domain and open the other table
+        row.onclick=()=>{
+          if(ot){domain=dk;selectedTable=other;buildPills();renderERD();openDrawer(ot,od,od.edges||[],od.tables||[]);}
+        };
+        xs.appendChild(row);
+      });
+      body.appendChild(xs);
+    }
   }
 
   // ── NOTES ──
@@ -1171,6 +1390,9 @@ function openDrawer(table,d,edges,tables){
 function closeDrawer(){document.getElementById('drawer').classList.remove('open');selectedTable=null;if(data)renderERD();}
 
 // ══ MINIMAP ══════════════════════════════════
+// ── Minimap state for click-to-navigate ──
+let mmSc=1,mmOx=0,mmOy=0;
+
 function updateMinimap(){
   const mc=document.getElementById('mm-canvas'),ctx=mc.getContext('2d');
   const W=160,H=96;ctx.clearRect(0,0,W,H);
@@ -1180,6 +1402,8 @@ function updateMinimap(){
   tables.forEach(t=>{const p=layout[t.id];if(!p)return;minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]+TW(t));maxY=Math.max(maxY,p[1]+TH(t));});
   const fw=maxX-minX||1,fh=maxY-minY||1,sc=Math.min((W-10)/fw,(H-10)/fh);
   const ox=(W-fw*sc)/2-minX*sc,oy=(H-fh*sc)/2-minY*sc;
+  // Store for click mapping
+  mmSc=sc; mmOx=ox; mmOy=oy;
   const col=d.color||css('--accent');
   tables.forEach(t=>{
     const p=layout[t.id];if(!p)return;
@@ -1191,6 +1415,34 @@ function updateMinimap(){
   vp.style.left=Math.max(0,(-panX/scale)*sc+ox)+'px';vp.style.top=Math.max(0,(-panY/scale)*sc+oy)+'px';
   vp.style.width=Math.min(W,(cw/scale)*sc)+'px';vp.style.height=Math.min(H,(ch/scale)*sc)+'px';
 }
+
+// Minimap click/drag — click anywhere to pan canvas to that point
+(()=>{
+  const mm=document.getElementById('minimap');
+  let mmDragging=false;
+  function mmPanTo(ev){
+    const rect=mm.getBoundingClientRect();
+    const mx=ev.clientX-rect.left, my=ev.clientY-rect.top;
+    // Convert minimap coords → world coords → canvas pan
+    const worldX=(mx-mmOx)/mmSc;
+    const worldY=(my-mmOy)/mmSc;
+    const cw=canvas.clientWidth,ch=canvas.clientHeight;
+    panX=cw/2-worldX*scale;
+    panY=ch/2-worldY*scale;
+    applyTransform();
+  }
+  mm.addEventListener('mousedown',ev=>{
+    if(!data)return;
+    mmDragging=true;
+    mmPanTo(ev);
+    ev.preventDefault();ev.stopPropagation();
+  });
+  document.addEventListener('mousemove',ev=>{
+    if(!mmDragging)return;
+    mmPanTo(ev);
+  });
+  document.addEventListener('mouseup',()=>{ mmDragging=false; });
+})();
 
 // ══ EXPORT SVG ═══════════════════════════════
 function exportSVG(){
@@ -1436,6 +1688,95 @@ document.addEventListener('mousedown', e=>{
     closeSearch();
   }
 });
+
+// ══ FILTER ═══════════════════════════════════
+function toggleFilter(type){
+  if(activeFilters.has(type)) activeFilters.delete(type);
+  else activeFilters.add(type);
+  // Update button states
+  ['pk','fk','pi','mx'].forEach(t=>{
+    const btn=document.getElementById(`filt-${t}`);
+    if(btn) btn.classList.toggle(`active-${t}`, activeFilters.has(t));
+  });
+  document.getElementById('filter-clear').classList.toggle('show', activeFilters.size>0);
+  renderERD();
+  if(activeFilters.size>0){
+    const labels={'pk':'PK','fk':'FK','pi':'PI','mx':'Masked'};
+    const active=[...activeFilters].map(t=>labels[t]).join(', ');
+    toast(`Showing ${active} columns`);
+  }
+}
+function clearFilters(){
+  activeFilters.clear();
+  ['pk','fk','pi','mx'].forEach(t=>{
+    const btn=document.getElementById(`filt-${t}`);
+    if(btn) btn.className='filt-btn';
+  });
+  document.getElementById('filter-clear').classList.remove('show');
+  renderERD();
+}
+
+// ══ CONTEXT MENU ═════════════════════════════
+function showCtxMenu(x,y){
+  const m=document.getElementById('ctx-menu');
+  m.classList.add('open');
+  // Ensure menu stays within viewport
+  const mw=m.offsetWidth||200,mh=m.offsetHeight||140;
+  const vw=window.innerWidth,vh=window.innerHeight;
+  m.style.left=Math.min(x,vw-mw-8)+'px';
+  m.style.top=Math.min(y,vh-mh-8)+'px';
+}
+function closeCtxMenu(){
+  document.getElementById('ctx-menu').classList.remove('open');
+}
+document.addEventListener('mousedown',ev=>{
+  if(!ev.target.closest('#ctx-menu')) closeCtxMenu();
+});
+document.addEventListener('keydown',ev=>{
+  if(ev.key==='Escape') closeCtxMenu();
+});
+
+function getCtxTable(){
+  if(!ctxTableId||!ctxDomainKey||!data) return null;
+  return (data.domains[ctxDomainKey]?.tables||[]).find(t=>t.id===ctxTableId)||null;
+}
+
+function ctxCopySchema(){
+  closeCtxMenu();
+  const t=getCtxTable(); if(!t) return;
+  navigator.clipboard.writeText(JSON.stringify(t,null,2))
+    .then(()=>toast('✓ Table JSON copied to clipboard'))
+    .catch(()=>toast('Copy failed — try again','#ef4444'));
+}
+function ctxCopyName(){
+  closeCtxMenu();
+  const t=getCtxTable(); if(!t) return;
+  navigator.clipboard.writeText(t.name)
+    .then(()=>toast(`✓ Copied "${t.name}"`))
+    .catch(()=>toast('Copy failed','#ef4444'));
+}
+function ctxExpand(){
+  closeCtxMenu();
+  const t=getCtxTable(); if(!t) return;
+  expandedTables[t.id]=true;
+  renderERD();
+}
+function ctxFocus(){
+  closeCtxMenu();
+  if(!ctxTableId||!data||!ctxDomainKey) return;
+  // Switch domain if needed
+  if(ctxDomainKey!==domain){ domain=ctxDomainKey; buildPills(); }
+  const t=getCtxTable(); if(!t) return;
+  selectedTable=t.id;
+  renderERD();
+  const dom=data.domains[ctxDomainKey];
+  openDrawer(t,dom,dom.edges||[],dom.tables||[]);
+  animatePan(
+    canvas.clientWidth/2-(dom.layout[t.id][0]+TW(t)/2)*scale,
+    canvas.clientHeight/2-(dom.layout[t.id][1]+TH(t)/2)*scale,
+    Math.min(1.2,scale)
+  );
+}
 
 // ══ BOOT ═════════════════════════════════════
 loadSchema();
