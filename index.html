@@ -535,7 +535,7 @@ code{background:var(--s2);padding:1px 6px;border-radius:4px;font-family:var(--mo
 <div id="toolbar">
   <div id="vtitle">
     <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="1" width="7.5" height="6" rx="1.5"/><rect x="11.5" y="1" width="7.5" height="6" rx="1.5"/><rect x="1" y="13" width="7.5" height="6" rx="1.5"/><rect x="11.5" y="13" width="7.5" height="6" rx="1.5"/><line x1="4.75" y1="7" x2="4.75" y2="10.5" stroke-linecap="round"/><line x1="15.25" y1="7" x2="15.25" y2="10.5" stroke-linecap="round"/><line x1="4.75" y1="10.5" x2="15.25" y2="10.5" stroke-linecap="round"/></svg>
-    ERD Studio <em id="vtitle-sub"></em>
+    Generation ERD <em id="vtitle-sub"></em>
   </div>
   <div class="tsep"></div>
   <div class="dpills" id="dpills"></div>
@@ -699,7 +699,7 @@ async function loadSchema(manual=false){
     data=raw;domain=Object.keys(raw.domains)[0];
     selectedTable=null;Object.keys(expandedTables).forEach(k=>delete expandedTables[k]);
     document.getElementById('empty').classList.add('hidden');
-    document.title=raw.title?`${raw.title} — ERD Studio`:'ERD Studio';
+    document.title=raw.title?`${raw.title} — Generation ERD`:'Generation ERD';
     document.getElementById('vtitle-sub').textContent=raw.title?`— ${raw.title}`:'';
 
     buildPills();renderERD();setTimeout(fitView,60);
